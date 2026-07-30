@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelaTrack - Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #34495e; }
+        .form-group { margin-bottom: 20px; display: flex; gap: 10px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MelaTrack - የአስተዳዳሪ ዳሽቦርድ</h1>
+        
+        <h3>አዲስ ሰራተኛ መመዝገቢያ</h3>
+        <div class="form-group">
+            <input type="text" id="name" placeholder="ሙሉ ስም" required>
+            <input type="text" id="dept" placeholder="የስራ ክፍል">
+            <input type="text" id="phone" placeholder="ስልክ ቁጥር">
+            <button onclick="addEmployee()">መዝግብ</button>
+        </div>
+
+        <hr>
+
+        <h3>የዛሬ የክትትል ሪፖርት</h3>
+        <button onclick="loadReport()">ሪፖርት አድስ (Refresh)</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>ስም</th>
+                    <th>የስራ ክፍል</th>
+                    <th>መግቢያ ሰዓት</th>
+                    <th>መውጫ ሰዓት</th>
+                    <th>ሁኔታ (Status)</th>
+                </tr>
+            </thead>
+            <tbody id="reportTable">
+                <!-- Data will be inserted dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        async function addEmployee() {
+            const name = document.getElementById('name').value;
+            const dept = document.getElementById('dept').value;
+            const phone = document.getElementById('phone').value;
+
+            const res = await fetch('/api/employees', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: name, department: dept, phone: phone })
+            });
+            if(res.ok) { alert('ሰራተኛው በጥሩ ሁኔታ ተመዝግቧል!'); location.reload(); }
+        }
+
+        async function loadReport() {
+            const res = await fetch('/api/report');
+            const data = await res.json();
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '';
+            
+            data.forEach(row => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${row.id}</td>
+                        <td>${row.full_name}</td>
+                        <td>${row.department}</td>
+                        <td>${row.check_in || '-'}</td>
+                        <td>${row.check_out || '-'}</td>
+                        <td>${row.status}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        // ገጹ ሲከፈት ሪፖርቱን በራስ-ሰር ያመጣል
+        window.onload = loadReport;
+    </script>
+</body>
+</html>
