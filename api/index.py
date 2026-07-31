@@ -4,12 +4,13 @@ from flask_cors import CORS
 import psycopg2
 
 app = Flask(__name__)
-CORS(app) # ከሁሉም ገጽ የሚመጡ ጥያቄዎችን እንዲቀበል ይፈቅዳል
+CORS(app)  # Browser CORS blocking እንዳያመጣ ይከላከላል
 
-# Vercel POSTGRES_URL ወይም DATABASE_URL ን ይጠቀማል
 DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
 
 def get_db_connection():
+    if not DB_URL:
+        raise Exception("Database Connection URL አልተገኘም! Vercel Environment Variables ላይ ያረጋግጡ።")
     conn = psycopg2.connect(DB_URL)
     return conn
 
@@ -17,37 +18,35 @@ def get_db_connection():
 @app.route('/api/employees', methods=['POST'])
 def add_employee():
     data = request.json or {}
-    full_name = data.get('full_name')
-    department = data.get('department')
-    phone = data.get('phone')
-
-    if not full_name:
-        return jsonify({"error": "Full name is required"}), 400
-
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO employees (full_name, department, phone) 
             VALUES (%s, %s, %s) RETURNING id;
-        """, (full_name, department, phone))
+        """, (data.get('full_name'), data.get('department'), data.get('phone')))
         new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        conn.close()
         return jsonify({"message": "Successfully registered!", "id": new_id}), 201
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 2. የዕለት መግቢያ (Check-in)
 @app.route('/api/checkin', methods=['POST'])
 def check_in():
     data = request.json or {}
     employee_id = data.get('employee_id')
-    
     if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -57,23 +56,26 @@ def check_in():
             ON CONFLICT (employee_id, att_date) 
             DO UPDATE SET check_in = CURRENT_TIME;
         """, (employee_id,))
-        
         conn.commit()
         cur.close()
-        conn.close()
-        return jsonify({"message": "Check-in successfully recorded!"}), 200
+        return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 3. የዕለት መውጫ (Check-out)
 @app.route('/api/checkout', methods=['POST'])
 def check_out():
     data = request.json or {}
     employee_id = data.get('employee_id')
-    
     if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -82,17 +84,21 @@ def check_out():
             SET check_out = CURRENT_TIME 
             WHERE employee_id = %s AND att_date = CURRENT_DATE;
         """, (employee_id,))
-        
         conn.commit()
         cur.close()
-        conn.close()
-        return jsonify({"message": "Check-out successfully recorded!"}), 200
+        return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 4. የዛሬ ሪፖርት ማውጫ (Daily Report)
 @app.route('/api/report', methods=['GET'])
 def get_report():
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -114,13 +120,12 @@ def get_report():
                 "status": row[5]
             })
         cur.close()
-        conn.close()
         return jsonify(report_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# ለ Vercel Serverless Function አስፈላጊ ነው
-app = app
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
