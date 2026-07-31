@@ -1,20 +1,24 @@
 import os
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import psycopg2
 
 app = Flask(__name__)
+CORS(app)  # Cross-Origin requests እንዲሰሩ ይፈቅዳል
 
-# Vercel Postgres የሚሰጠንን የዳታቤዝ ሊንክ እንቀበላለን
 DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
 
 def get_db_connection():
+    if not DB_URL:
+        raise Exception("Database Connection URL አልተገኘም! Vercel Environment Variables ላይ ያረጋግጡ።")
     conn = psycopg2.connect(DB_URL)
     return conn
 
 # 1. አዲስ ሰራተኛ መመዝገቢያ (Register Employee)
 @app.route('/api/employees', methods=['POST'])
 def add_employee():
-    data = request.json
+    data = request.json or {}
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -25,16 +29,24 @@ def add_employee():
         new_id = cur.fetchone()[0]
         conn.commit()
         cur.close()
-        conn.close()
         return jsonify({"message": "Successfully registered!", "id": new_id}), 201
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 2. የዕለት መግቢያ (Check-in)
 @app.route('/api/checkin', methods=['POST'])
 def check_in():
-    data = request.json
+    data = request.json or {}
     employee_id = data.get('employee_id')
+    if not employee_id:
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
+
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -46,16 +58,24 @@ def check_in():
         """, (employee_id,))
         conn.commit()
         cur.close()
-        conn.close()
         return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 3. የዕለት መውጫ (Check-out)
 @app.route('/api/checkout', methods=['POST'])
 def check_out():
-    data = request.json
+    data = request.json or {}
     employee_id = data.get('employee_id')
+    if not employee_id:
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
+
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -66,14 +86,19 @@ def check_out():
         """, (employee_id,))
         conn.commit()
         cur.close()
-        conn.close()
         return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
     except Exception as e:
+        if conn:
+            conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 # 4. የዛሬ ሪፖርት ማውጫ (Daily Report)
 @app.route('/api/report', methods=['GET'])
 def get_report():
+    conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -95,10 +120,12 @@ def get_report():
                 "status": row[5]
             })
         cur.close()
-        conn.close()
         return jsonify(report_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)
