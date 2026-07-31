@@ -1,4 +1,5 @@
 {
+  "version": 2,
   "builds": [
     {
       "src": "api/index.py",
@@ -12,11 +13,11 @@
     },
     {
       "src": "/admin",
-      "dest": "public/admin.html"
+      "dest": "/admin.html"
     },
     {
       "src": "/(.*)",
-      "dest": "public/$1"
+      "dest": "/$1"
     }
   ]
 }
