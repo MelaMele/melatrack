@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon 404 ስህተት እንዳይመጣ ይከላከላል -->
+    <link rel="icon" href="data:,">
     <title>MelaTrack - Admin Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         h1 { color: #34495e; }
         .form-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; flex: 1; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; flex: 1; min-width: 150px; }
         button { padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         button:hover { background: #2980b9; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -35,8 +37,11 @@
 
         <hr style="margin: 25px 0;">
 
-        <h3>የዛሬ የክትትል ሪፖርት</h3>
-        <button onclick="loadReport()">ሪፖርት አድስ (Refresh)</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">የዛሬ የክትትል ሪፖርት</h3>
+            <button onclick="loadReport()">ሪፖርት አድስ (Refresh)</button>
+        </div>
+
         <table>
             <thead>
                 <tr>
@@ -49,7 +54,7 @@
                 </tr>
             </thead>
             <tbody id="reportTable">
-                <!-- Data inserted dynamically -->
+                <tr><td colspan="6" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
             </tbody>
         </table>
     </div>
@@ -91,10 +96,12 @@
         }
 
         async function loadReport() {
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
+            
             try {
                 const res = await fetch('/api/report');
                 const data = await res.json();
-                const tbody = document.getElementById('reportTable');
                 tbody.innerHTML = '';
                 
                 if(Array.isArray(data)) {
@@ -110,13 +117,16 @@
                                 <td>${row.department || '-'}</td>
                                 <td>${row.check_in || '-'}</td>
                                 <td>${row.check_out || '-'}</td>
-                                <td>${row.status || 'Absent'}</td>
+                                <td>${row.status || 'Present'}</td>
                             </tr>
                         `;
                     });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">መረጃውን ማምጣት አልተቻለም!</td></tr>';
                 }
             } catch (err) {
                 console.error("Report fetch error:", err);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">ከሰርቨር ጋር ማገናኘት አልተቻለም!</td></tr>';
             }
         }
         
