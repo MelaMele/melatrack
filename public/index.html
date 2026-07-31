@@ -1,55 +1,101 @@
-<!DOCTYPE html>
-<html lang="am">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaTrack - Attendance Check-in</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; width: 320px; }
-        h2 { color: #2c3e50; margin-bottom: 20px; }
-        input { width: 90%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
-        .btn-in { background-color: #2ecc71; color: white; }
-        .btn-out { background-color: #e74c3c; color: white; }
-        #msg { margin-top: 15px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>MelaTrack</h2>
-        <p>የሰራተኛ ID ያስገቡ</p>
-        <input type="number" id="employeeId" placeholder="ምሳሌ፦ 101" required>
-        <button class="btn-in" onclick="sendAttendance('checkin')">መግቢያ (Check-in)</button>
-        <button class="btn-out" onclick="sendAttendance('checkout')">መውጫ (Check-out)</button>
-        <div id="msg"></div>
-    </div>
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import psycopg2
 
-    <script>
-        async function sendAttendance(type) {
-            const id = document.getElementById('employeeId').value;
-            const msgDiv = document.getElementById('msg');
-            if(!id) { msgDiv.innerText = "እባክዎን ID ያስገቡ!"; msgDiv.style.color = "red"; return; }
+app = Flask(__name__)
+CORS(app)  # ሁሉንም የብሮውዘር ጥያቄዎች እንዲቀበል ይፈቅዳል
 
-            try {
-                const response = await fetch(`/api/${type}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ employee_id: id })
-                });
-                const result = await response.json();
-                if(response.ok) {
-                    msgDiv.innerText = result.message;
-                    msgDiv.style.color = "green";
-                } else {
-                    msgDiv.innerText = result.error || "ስህተት ተፈጥሯል";
-                    msgDiv.style.color = "red";
-                }
-            } catch (err) {
-                msgDiv.innerText = "ከሰርቨሩ ጋር ማገናኘት አልተቻለም!";
-                msgDiv.style.color = "red";
-            }
-        }
-    </script>
-</body>
-</html>
+DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    conn = psycopg2.connect(DB_URL)
+    return conn
+
+@app.route('/api/employees', methods=['POST'])
+def add_employee():
+    data = request.json
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO employees (full_name, department, phone) 
+            VALUES (%s, %s, %s) RETURNING id;
+        """, (data.get('full_name'), data.get('department'), data.get('phone')))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Successfully registered!", "id": new_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/checkin', methods=['POST'])
+def check_in():
+    data = request.json
+    employee_id = data.get('employee_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO attendance (employee_id, att_date, check_in, status)
+            VALUES (%s, CURRENT_DATE, CURRENT_TIME, 'Present')
+            ON CONFLICT (employee_id, att_date) 
+            DO UPDATE SET check_in = CURRENT_TIME;
+        """, (employee_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/checkout', methods=['POST'])
+def check_out():
+    data = request.json
+    employee_id = data.get('employee_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE attendance 
+            SET check_out = CURRENT_TIME 
+            WHERE employee_id = %s AND att_date = CURRENT_DATE;
+        """, (employee_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/report', methods=['GET'])
+def get_report():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT e.id, e.full_name, e.department, a.check_in, a.check_out, a.status 
+            FROM attendance a 
+            JOIN employees e ON a.employee_id = e.id 
+            WHERE a.att_date = CURRENT_DATE;
+        """)
+        rows = cur.fetchall()
+        report_data = []
+        for row in rows:
+            report_data.append({
+                "id": row[0],
+                "full_name": row[1],
+                "department": row[2],
+                "check_in": str(row[3]) if row[3] else "-",
+                "check_out": str(row[4]) if row[4] else "-",
+                "status": row[5]
+            })
+        cur.close()
+        conn.close()
+        return jsonify(report_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
