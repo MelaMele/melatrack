@@ -1,19 +1,104 @@
--- 1. የሰራተኞች ሰንጠረዥ
-CREATE TABLE employees (
-    id SERIAL PRIMARY KEY,
-    full_name VARCHAR(100) NOT NULL,
-    department VARCHAR(50),
-    phone VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+import os
+from flask import Flask, request, jsonify
+import psycopg2
 
--- 2. የዕለታዊ ክትትል ሰንጠረዥ
-CREATE TABLE attendance (
-    id SERIAL PRIMARY KEY,
-    employee_id INT REFERENCES employees(id) ON DELETE CASCADE,
-    att_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    check_in TIME,
-    check_out TIME,
-    status VARCHAR(20) DEFAULT 'Present',
-    UNIQUE(employee_id, att_date)
-);
+app = Flask(__name__)
+
+# Vercel Postgres የሚሰጠንን የዳታቤዝ ሊንክ እንቀበላለን
+DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    conn = psycopg2.connect(DB_URL)
+    return conn
+
+# 1. አዲስ ሰራተኛ መመዝገቢያ (Register Employee)
+@app.route('/api/employees', methods=['POST'])
+def add_employee():
+    data = request.json
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO employees (full_name, department, phone) 
+            VALUES (%s, %s, %s) RETURNING id;
+        """, (data.get('full_name'), data.get('department'), data.get('phone')))
+        new_id = cur.fetchone()[0]
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": "Successfully registered!", "id": new_id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 2. የዕለት መግቢያ (Check-in)
+@app.route('/api/checkin', methods=['POST'])
+def check_in():
+    data = request.json
+    employee_id = data.get('employee_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO attendance (employee_id, att_date, check_in, status)
+            VALUES (%s, CURRENT_DATE, CURRENT_TIME, 'Present')
+            ON CONFLICT (employee_id, att_date) 
+            DO UPDATE SET check_in = CURRENT_TIME;
+        """, (employee_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 3. የዕለት መውጫ (Check-out)
+@app.route('/api/checkout', methods=['POST'])
+def check_out():
+    data = request.json
+    employee_id = data.get('employee_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE attendance 
+            SET check_out = CURRENT_TIME 
+            WHERE employee_id = %s AND att_date = CURRENT_DATE;
+        """, (employee_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# 4. የዛሬ ሪፖርት ማውጫ (Daily Report)
+@app.route('/api/report', methods=['GET'])
+def get_report():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT e.id, e.full_name, e.department, a.check_in, a.check_out, a.status 
+            FROM attendance a 
+            JOIN employees e ON a.employee_id = e.id 
+            WHERE a.att_date = CURRENT_DATE;
+        """)
+        rows = cur.fetchall()
+        report_data = []
+        for row in rows:
+            report_data.append({
+                "id": row[0],
+                "full_name": row[1],
+                "department": row[2],
+                "check_in": str(row[3]) if row[3] else "-",
+                "check_out": str(row[4]) if row[4] else "-",
+                "status": row[5]
+            })
+        cur.close()
+        conn.close()
+        return jsonify(report_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
