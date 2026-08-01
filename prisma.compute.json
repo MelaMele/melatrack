@@ -1,0 +1,13 @@
+{
+  "region": "us-east-1",
+  "app": {
+    "name": "melatrack",
+    "framework": "bun",
+    "entry": "bunx @prisma/cli@latest app deploy --framework bun --entry src/server.ts",
+    "httpPort": 3000,
+    "build": {
+      "command": null,
+      "outputDirectory": "."
+    }
+  }
+}
