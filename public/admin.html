@@ -1,154 +1,143 @@
-import os
-import requests
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import psycopg2
-
-app = Flask(__name__)
-CORS(app)
-
-DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
-BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-WEB_APP_URL = os.environ.get('VERCEL_URL', 'https://melatrack-tan.vercel.app')
-
-if WEB_APP_URL and not WEB_APP_URL.startswith('http'):
-    WEB_APP_URL = f"https://{WEB_APP_URL}"
-
-TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
-
-def get_db_connection():
-    if not DB_URL:
-        raise Exception("Database connection URL is not set in Environment Variables!")
-    return psycopg2.connect(DB_URL)
-
-def send_telegram_message(chat_id, text, reply_markup=None):
-    if not TELEGRAM_API:
-        return
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    requests.post(f"{TELEGRAM_API}/sendMessage", json=payload)
-
-# --- TELEGRAM WEBHOOK ROUTE ---
-@app.route('/api/webhook', methods=['POST'])
-def telegram_webhook():
-    data = request.json or {}
-    
-    # Inline Button Click Handling
-    if "callback_query" in data:
-        cb = data["callback_query"]
-        chat_id = cb["message"]["chat"]["id"]
-        cb_data = cb["data"]
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>MelaTrack - Admin Dashboard</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; padding: 15px; margin: 0; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #34495e; font-size: 22px; }
+        .form-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; flex: 1; min-width: 130px; }
+        button { padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2980b9; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+        th { background-color: #f2f2f2; }
+        #statusMsg { font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MelaTrack - Admin Dashboard</h1>
         
-        conn = None
-        try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-            
-            # Search employee by telegram_id or system ID
-            if cb_data.startswith("checkin_"):
-                emp_id = cb_data.split("_")[1]
-                cur.execute("""
-                    INSERT INTO attendance (employee_id, att_date, check_in, status)
-                    VALUES (%s, CURRENT_DATE, CURRENT_TIME, 'Present')
-                    ON CONFLICT (employee_id, att_date) 
-                    DO UPDATE SET check_in = CURRENT_TIME;
-                """, (emp_id,))
-                conn.commit()
-                send_telegram_message(chat_id, "✅ <b>Check-in ተመዝግቧል!</b> መልካም የስራ ቀን።")
-                
-            elif cb_data.startswith("checkout_"):
-                emp_id = cb_data.split("_")[1]
-                cur.execute("""
-                    UPDATE attendance 
-                    SET check_out = CURRENT_TIME 
-                    WHERE employee_id = %s AND att_date = CURRENT_DATE;
-                """, (emp_id,))
-                conn.commit()
-                send_telegram_message(chat_id, "👋 <b>Check-out ተመዝግቧል!</b> ደህና አምሹ።")
-                
-            cur.close()
-        except Exception as e:
-            if conn: conn.rollback()
-            send_telegram_message(chat_id, f"⚠️ ስህተት አጋጥሟል፦ {str(e)}")
-        finally:
-            if conn: conn.close()
-            
-        return jsonify({"status": "ok"}), 200
+        <h3>አዲስ ሰራተኛ መመዝገቢያ</h3>
+        <form id="addEmpForm" onsubmit="addEmployee(event)">
+            <div class="form-group">
+                <input type="text" id="name" placeholder="ሙሉ ስም" required>
+                <input type="text" id="dept" placeholder="የስራ ክፍል" required>
+                <input type="text" id="phone" placeholder="ስልክ ቁጥር" required>
+                <button type="submit">መዝግብ</button>
+            </div>
+        </form>
+        <div id="statusMsg"></div>
 
-    # Message Handling
-    if "message" in data:
-        msg = data["message"]
-        chat_id = msg["chat"]["id"]
-        text = msg.get("text", "")
+        <hr style="margin: 20px 0;">
 
-        if text == "/start":
-            welcome_text = (
-                "👋 <b>እንኳን ወደ MelaTrack Attendance Bot በደህና መጡ!</b>\n\n"
-                "ከታች ያሉትን አማራጮች በመጠቀም መግቢያ/መውጫ ያስመዝግቡ ወይም Admin Dashboard ይክፈቱ።"
-            )
-            
-            keyboard = {
-                "inline_keyboard": [
-                    [
-                        {"text": "📊 Admin Dashboard (Web App)", "web_app": {"url": f"{WEB_APP_URL}/admin"}}
-                    ]
-                ]
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">የዛሬ የክትትል ሪፖርት</h3>
+            <button onclick="loadReport()">ሪፖርት አድስ</button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ስም</th>
+                        <th>የስራ ክፍል</th>
+                        <th>መግቢያ</th>
+                        <th>መውጫ</th>
+                        <th>ሁኔታ</th>
+                    </tr>
+                </thead>
+                <tbody id="reportTable">
+                    <tr><td colspan="6" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        async function addEmployee(event) {
+            event.preventDefault();
+            const msgDiv = document.getElementById('statusMsg');
+            msgDiv.innerText = "እየመዘገበ ነው...";
+            msgDiv.style.color = "blue";
+
+            const name = document.getElementById('name').value;
+            const dept = document.getElementById('dept').value;
+            const phone = document.getElementById('phone').value;
+
+            try {
+                const res = await fetch('/api/employees', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_name: name, department: dept, phone: phone })
+                });
+                
+                const data = await res.json();
+                if(res.ok) {
+                    msgDiv.innerText = `ተሳክቷል! ID: ${data.id}`;
+                    msgDiv.style.color = "green";
+                    document.getElementById('addEmpForm').reset();
+                    loadReport();
+                } else {
+                    msgDiv.innerText = "ስህተት፦ " + (data.error || "መመዝገብ አልተቻለም");
+                    msgDiv.style.color = "red";
+                }
+            } catch (err) {
+                msgDiv.innerText = "ከሰርቨሩ ጋር ማገናኘት አልተቻለም!";
+                msgDiv.style.color = "red";
             }
-            send_telegram_message(chat_id, welcome_text, reply_markup=keyboard)
+        }
 
-    return jsonify({"status": "ok"}), 200
-
-# --- REST API FOR ADMIN WEB APP ---
-@app.route('/api/employees', methods=['POST'])
-def add_employee():
-    data = request.json or {}
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO employees (full_name, department, phone) 
-            VALUES (%s, %s, %s) RETURNING id;
-        """, (data.get('full_name'), data.get('department'), data.get('phone')))
-        new_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        return jsonify({"message": "Successfully registered!", "id": new_id}), 201
-    except Exception as e:
-        if conn: conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-@app.route('/api/report', methods=['GET'])
-def get_report():
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT e.id, e.full_name, e.department, a.check_in, a.check_out, a.status 
-            FROM employees e
-            LEFT JOIN attendance a ON e.id = a.employee_id AND a.att_date = CURRENT_DATE;
-        """)
-        rows = cur.fetchall()
-        report_data = []
-        for row in rows:
-            report_data.append({
-                "id": row[0],
-                "full_name": row[1],
-                "department": row[2],
-                "check_in": str(row[3]) if row[3] else "-",
-                "check_out": str(row[4]) if row[4] else "-",
-                "status": row[5] if row[5] else "Absent"
-            })
-        cur.close()
-        return jsonify(report_data), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: conn.close()
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        async function loadReport() {
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
+            
+            try {
+                const res = await fetch('/api/report');
+                const data = await res.json();
+                tbody.innerHTML = '';
+                
+                if(Array.isArray(data)) {
+                    if(data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">ምንም ሰራተኛ አልተመዘገበም</td></tr>';
+                        return;
+                    }
+                    data.forEach(row => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${row.id}</td>
+                                <td>${row.full_name}</td>
+                                <td>${row.department || '-'}</td>
+                                <td>${row.check_in || '-'}</td>
+                                <td>${row.check_out || '-'}</td>
+                                <td>${row.status === 'Present' ? '✅ Present' : '❌ Absent'}</td>
+                            </tr>
+                        `;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">መረጃ ማምጣት አልተቻለም</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">ከሰርቨር ጋር ማገናኘት አልተቻለም</td></tr>';
+            }
+        }
+        
+        window.onload = loadReport;
+    </script>
+</body>
+</html>
