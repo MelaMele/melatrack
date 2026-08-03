@@ -1,128 +1,128 @@
-import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import psycopg2
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>MelaTrack - የሰራተኞች መግቢያ/መውጫ</title>
+    <!-- Telegram Web App SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #eef2f5; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 15px; 
+        }
+        .card { 
+            background: white; 
+            padding: 30px 25px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+        }
+        h1 { color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
+        p { color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
+        .form-group { margin-bottom: 20px; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            border: 2px solid #bdc3c7; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            text-align: center; 
+            outline: none; 
+            transition: 0.3s; 
+        }
+        input:focus { border-color: #3498db; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { 
+            flex: 1; 
+            padding: 12px; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            color: white; 
+        }
+        .btn-checkin { background: #2ecc71; }
+        .btn-checkin:hover { background: #27ae60; }
+        .btn-checkout { background: #e74c3c; }
+        .btn-checkout:hover { background: #c0392b; }
+        #msg { margin-top: 20px; font-weight: bold; font-size: 14px; min-height: 20px; }
+    </style>
+</head>
+<body>
 
-app = Flask(__name__)
-CORS(app)
+    <div class="card">
+        <h1>⏱️ MelaTrack</h1>
+        <p>የሰራተኛ መግቢያ እና መውጫ መቆጣጠሪያ</p>
 
-DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+        <div class="form-group">
+            <input type="number" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required>
+        </div>
 
-def get_db_connection():
-    if not DB_URL:
-        raise Exception("Database connection URL is not set in Environment Variables!")
-    conn = psycopg2.connect(DB_URL)
-    return conn
+        <div class="btn-group">
+            <button type="button" class="btn-checkin" onclick="handleAttendance('checkin')">📥 Check In</button>
+            <button type="button" class="btn-checkout" onclick="handleAttendance('checkout')">📤 Check Out</button>
+        </div>
 
-@app.route('/api/employees', methods=['POST'])
-def add_employee():
-    data = request.json or {}
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO employees (full_name, department, phone) 
-            VALUES (%s, %s, %s) RETURNING id;
-        """, (data.get('full_name'), data.get('department'), data.get('phone')))
-        new_id = cur.fetchone()[0]
-        conn.commit()
-        cur.close()
-        return jsonify({"message": "Successfully registered!", "id": new_id}), 201
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
+        <div id="msg"></div>
+    </div>
 
-@app.route('/api/checkin', methods=['POST'])
-def check_in():
-    data = request.json or {}
-    employee_id = data.get('employee_id')
-    if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
-        
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            INSERT INTO attendance (employee_id, att_date, check_in, status)
-            VALUES (%s, CURRENT_DATE, CURRENT_TIME, 'Present')
-            ON CONFLICT (employee_id, att_date) 
-            DO UPDATE SET check_in = CURRENT_TIME;
-        """, (employee_id,))
-        conn.commit()
-        cur.close()
-        return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
+    <script>
+        // Telegram WebApp Initialization
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
 
-@app.route('/api/checkout', methods=['POST'])
-def check_out():
-    data = request.json or {}
-    employee_id = data.get('employee_id')
-    if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
+        async function handleAttendance(action) {
+            const empIdInput = document.getElementById('empId');
+            const empId = empIdInput.value.trim();
+            const msgDiv = document.getElementById('msg');
 
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            UPDATE attendance 
-            SET check_out = CURRENT_TIME 
-            WHERE employee_id = %s AND att_date = CURRENT_DATE;
-        """, (employee_id,))
-        conn.commit()
-        cur.close()
-        return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
-    except Exception as e:
-        if conn:
-            conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
+            if (!empId) {
+                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ID ያስገቡ!";
+                msgDiv.style.color = "#e67e22";
+                return;
+            }
 
-@app.route('/api/report', methods=['GET'])
-def get_report():
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT e.id, e.full_name, e.department, a.check_in, a.check_out, a.status 
-            FROM attendance a 
-            JOIN employees e ON a.employee_id = e.id 
-            WHERE a.att_date = CURRENT_DATE;
-        """)
-        rows = cur.fetchall()
-        report_data = []
-        for row in rows:
-            report_data.append({
-                "id": row[0],
-                "full_name": row[1],
-                "department": row[2],
-                "check_in": str(row[3]) if row[3] else "-",
-                "check_out": str(row[4]) if row[4] else "-",
-                "status": row[5]
-            })
-        cur.close()
-        return jsonify(report_data), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn:
-            conn.close()
+            msgDiv.innerText = "⏳ በማስመዝገብ ላይ...";
+            msgDiv.style.color = "#3498db";
 
-# For local development
-if __name__ == '__main__':
-    app.run(debug=True)
+            try {
+                const endpoint = action === 'checkin' ? '/api/checkin' : '/api/checkout';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ employee_id: empId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    msgDiv.innerText = `✅ ${data.message || 'በተሳካ ሁኔታ ተመዝግቧል!'}`;
+                    msgDiv.style.color = "#27ae60";
+                    empIdInput.value = ''; // Input-ን ባዶ ማድረግ
+                } else {
+                    msgDiv.innerText = `❌ ${data.error || 'ስህተት አጋጥሟል'}`;
+                    msgDiv.style.color = "#e74c3c";
+                }
+            } catch (error) {
+                msgDiv.innerText = "❌ ከሰርቨር ጋር ማገናኘት አልተቻለም!";
+                msgDiv.style.color = "#e74c3c";
+            }
+        }
+    </script>
+</body>
+</html>
