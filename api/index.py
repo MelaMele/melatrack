@@ -7,11 +7,11 @@ import psycopg2
 app = Flask(__name__)
 CORS(app)
 
-# 1. Environment Variables ማስተካከያ
+# Environment Variables
 DB_URL = (
+    os.environ.get('PRISMA_DATABASE_URL') or 
     os.environ.get('POSTGRES_URL') or 
-    os.environ.get('DATABASE_URL') or 
-    os.environ.get('PRISMA_DATABASE_URL')
+    os.environ.get('DATABASE_URL')
 )
 BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 WEB_APP_URL = os.environ.get('WEB_APP_URL', "https://melatrack-tan.vercel.app")
@@ -20,9 +20,8 @@ TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
 
 def get_db_connection():
     if not DB_URL:
-        raise Exception("Database URL አልተገኘም! Vercel ላይ POSTGRES_URL ወይም PRISMA_DATABASE_URL መኖሩን ያረጋግጡ።")
-    conn = psycopg2.connect(DB_URL)
-    return conn
+        raise Exception("Database Connection URL አልተገኘም! Vercel Environment Variables ላይ PRISMA_DATABASE_URL መኖሩን ያረጋግጡ።")
+    return psycopg2.connect(DB_URL)
 
 def send_telegram_message(chat_id, text, reply_markup=None):
     if not TELEGRAM_API:
@@ -35,14 +34,48 @@ def send_telegram_message(chat_id, text, reply_markup=None):
     except Exception as e:
         print("Telegram Send Error:", e)
 
-# ---------------------------------------------------------
-# 2. TELEGRAM WEBHOOK ENDPOINT (ቦቱ ምላሽ እንዲሰጥ የሚያደርገው)
-# ---------------------------------------------------------
+# 1. Database Init (ቴብሎች ከሌሉ በራሱ ይፈጥራል)
+def init_db():
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS employees (
+                id SERIAL PRIMARY KEY,
+                full_name VARCHAR(100) NOT NULL,
+                department VARCHAR(50),
+                phone VARCHAR(20) UNIQUE,
+                telegram_id VARCHAR(50) UNIQUE
+            );
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS attendance (
+                id SERIAL PRIMARY KEY,
+                employee_id INT REFERENCES employees(id) ON DELETE CASCADE,
+                att_date DATE NOT NULL,
+                check_in TIME,
+                check_out TIME,
+                status VARCHAR(20) DEFAULT 'Present',
+                UNIQUE(employee_id, att_date)
+            );
+        """)
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print("DB Init Error:", e)
+        if conn: conn.rollback()
+    finally:
+        if conn: conn.close()
+
+# አፕሊኬሽኑ ሲነሳ ቴብሎቹን ይፈትሻል
+init_db()
+
+# 2. Telegram Webhook (ቦቱ ምላሽ እንዲሰጥ)
 @app.route('/api/webhook', methods=['POST'])
 def telegram_webhook():
     try:
         data = request.get_json(force=True, silent=True) or {}
-        
         if "message" in data:
             msg = data["message"]
             chat_id = msg["chat"]["id"]
@@ -69,7 +102,7 @@ def telegram_webhook():
                 process_tg_attendance(chat_id, action="check_out")
 
     except Exception as e:
-        print("Webhook Processing Error:", e)
+        print("Webhook Error:", e)
         
     return jsonify({"status": "ok"}), 200
 
@@ -83,7 +116,7 @@ def process_tg_attendance(telegram_id, action):
         emp = cur.fetchone()
 
         if not emp:
-            send_telegram_message(telegram_id, "⚠️ <b>አልተመዘገቡም!</b>\nእባክዎን መጀመሪያ በአድሚን በኩል መመዝገብዎን ያረጋግጡ።")
+            send_telegram_message(telegram_id, "⚠️ <b>አልተመዘገቡም!</b>\nእባክዎን መጀመሪያ በአድሚን ገጽ መመዝገብዎን ያረጋግጡ።")
             return
 
         emp_id, full_name = emp[0], emp[1]
@@ -113,9 +146,7 @@ def process_tg_attendance(telegram_id, action):
     finally:
         if conn: conn.close()
 
-# ---------------------------------------------------------
-# 3. WEB APP API ENDPOINTS (FOR FRONTEND)
-# ---------------------------------------------------------
+# 3. Web App APIs (ለ Mini App እና Dashboard)
 @app.route('/api/employees', methods=['GET', 'POST'])
 def manage_employees():
     conn = None
@@ -160,7 +191,7 @@ def check_in():
     data = request.json or {}
     employee_id = data.get('employee_id')
     if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
         
     conn = None
     try:
@@ -186,7 +217,7 @@ def check_out():
     data = request.json or {}
     employee_id = data.get('employee_id')
     if not employee_id:
-        return jsonify({"error": "Employee ID is required"}), 400
+        return jsonify({"error": "Employee ID ያስፈልጋል!"}), 400
 
     conn = None
     try:
