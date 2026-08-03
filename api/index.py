@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
@@ -6,14 +7,115 @@ import psycopg2
 app = Flask(__name__)
 CORS(app)
 
-DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+# 1. Environment Variables ማስተካከያ
+DB_URL = (
+    os.environ.get('POSTGRES_URL') or 
+    os.environ.get('DATABASE_URL') or 
+    os.environ.get('PRISMA_DATABASE_URL')
+)
+BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
+WEB_APP_URL = os.environ.get('WEB_APP_URL', "https://melatrack-tan.vercel.app")
+
+TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
 
 def get_db_connection():
     if not DB_URL:
-        raise Exception("Database connection URL is not set in Environment Variables!")
+        raise Exception("Database URL አልተገኘም! Vercel ላይ POSTGRES_URL ወይም PRISMA_DATABASE_URL መኖሩን ያረጋግጡ።")
     conn = psycopg2.connect(DB_URL)
     return conn
 
+def send_telegram_message(chat_id, text, reply_markup=None):
+    if not TELEGRAM_API:
+        return
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
+    try:
+        requests.post(f"{TELEGRAM_API}/sendMessage", json=payload, timeout=5)
+    except Exception as e:
+        print("Telegram Send Error:", e)
+
+# ---------------------------------------------------------
+# 2. TELEGRAM WEBHOOK ENDPOINT (ቦቱ ምላሽ እንዲሰጥ የሚያደርገው)
+# ---------------------------------------------------------
+@app.route('/api/webhook', methods=['POST'])
+def telegram_webhook():
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        
+        if "message" in data:
+            msg = data["message"]
+            chat_id = msg["chat"]["id"]
+            text = msg.get("text", "").strip()
+
+            if text == "/start":
+                welcome_text = (
+                    "👋 <b>እንኳን ወደ MelaTrack Attendance Bot በደህና መጡ!</b>\n\n"
+                    "ከታች ካሉት አማራጮች አንዱን ይምረጡ፡"
+                )
+                keyboard = {
+                    "keyboard": [
+                        [{"text": "📥 Check In"}, {"text": "📤 Check Out"}],
+                        [{"text": "📊 Admin Dashboard", "web_app": {"url": f"{WEB_APP_URL}/admin"}}]
+                    ],
+                    "resize_keyboard": True
+                }
+                send_telegram_message(chat_id, welcome_text, reply_markup=keyboard)
+
+            elif text == "📥 Check In":
+                process_tg_attendance(chat_id, action="check_in")
+
+            elif text == "📤 Check Out":
+                process_tg_attendance(chat_id, action="check_out")
+
+    except Exception as e:
+        print("Webhook Processing Error:", e)
+        
+    return jsonify({"status": "ok"}), 200
+
+def process_tg_attendance(telegram_id, action):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("SELECT id, full_name FROM employees WHERE telegram_id = %s OR phone = %s;", (str(telegram_id), str(telegram_id)))
+        emp = cur.fetchone()
+
+        if not emp:
+            send_telegram_message(telegram_id, "⚠️ <b>አልተመዘገቡም!</b>\nእባክዎን መጀመሪያ በአድሚን በኩል መመዝገብዎን ያረጋግጡ።")
+            return
+
+        emp_id, full_name = emp[0], emp[1]
+
+        if action == "check_in":
+            cur.execute("""
+                INSERT INTO attendance (employee_id, att_date, check_in, status)
+                VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME, 'Present')
+                ON CONFLICT (employee_id, att_date) 
+                DO UPDATE SET check_in = COALESCE(attendance.check_in, EXCLUDED.check_in), status = 'Present';
+            """, (emp_id,))
+            conn.commit()
+            send_telegram_message(telegram_id, f"✅ <b>{full_name}</b>፣ Check-In ተመዝግቧል!")
+
+        elif action == "check_out":
+            cur.execute("""
+                UPDATE attendance 
+                SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME
+                WHERE employee_id = %s AND att_date = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE;
+            """, (emp_id,))
+            conn.commit()
+            send_telegram_message(telegram_id, f"👋 <b>{full_name}</b>፣ Check-Out ተመዝግቧል!")
+
+    except Exception as e:
+        print(f"Attendance TG Error ({action}):", e)
+        send_telegram_message(telegram_id, "❌ ስህተት አጋጥሟል! እባክዎ ድጋሚ ይሞክሩ።")
+    finally:
+        if conn: conn.close()
+
+# ---------------------------------------------------------
+# 3. WEB APP API ENDPOINTS (FOR FRONTEND)
+# ---------------------------------------------------------
 @app.route('/api/employees', methods=['GET', 'POST'])
 def manage_employees():
     conn = None
@@ -136,6 +238,5 @@ def get_report():
     finally:
         if conn: conn.close()
 
-# For local development
 if __name__ == '__main__':
     app.run(debug=True)
