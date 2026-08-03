@@ -1,5 +1,4 @@
 import os
-import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
@@ -8,91 +7,116 @@ app = Flask(__name__)
 CORS(app)
 
 DB_URL = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
-BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
-WEB_APP_URL = "https://melatrack-tan.vercel.app"
-
-TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
 
 def get_db_connection():
     if not DB_URL:
-        return None
+        raise Exception("Database connection URL is not set in Environment Variables!")
+    conn = psycopg2.connect(DB_URL)
+    return conn
+
+@app.route('/api/employees', methods=['GET', 'POST'])
+def manage_employees():
+    conn = None
     try:
-        return psycopg2.connect(DB_URL)
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        if request.method == 'POST':
+            data = request.json or {}
+            cur.execute("""
+                INSERT INTO employees (full_name, department, phone, telegram_id) 
+                VALUES (%s, %s, %s, %s) RETURNING id;
+            """, (
+                data.get('full_name'), 
+                data.get('department'), 
+                data.get('phone'), 
+                data.get('telegram_id') or data.get('phone')
+            ))
+            new_id = cur.fetchone()[0]
+            conn.commit()
+            cur.close()
+            return jsonify({"message": "Successfully registered!", "id": new_id}), 201
+
+        elif request.method == 'GET':
+            cur.execute("SELECT id, full_name, department, phone, telegram_id FROM employees ORDER BY id ASC;")
+            rows = cur.fetchall()
+            employees = [
+                {"id": r[0], "full_name": r[1], "department": r[2], "phone": r[3], "telegram_id": r[4]} 
+                for r in rows
+            ]
+            cur.close()
+            return jsonify(employees), 200
+
     except Exception as e:
-        print("DB Connection Error:", e)
-        return None
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
 
-def send_telegram_message(chat_id, text, reply_markup=None):
-    if not TELEGRAM_API:
-        return
-    payload = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
-    if reply_markup:
-        payload["reply_markup"] = reply_markup
-    try:
-        requests.post(f"{TELEGRAM_API}/sendMessage", json=payload, timeout=5)
-    except Exception as e:
-        print("Telegram Send Error:", e)
-
-@app.route('/api/webhook', methods=['POST'])
-def telegram_webhook():
-    try:
-        data = request.get_json(force=True, silent=True) or {}
-        
-        if "message" in data:
-            msg = data["message"]
-            chat_id = msg["chat"]["id"]
-            text = msg.get("text", "")
-
-            if text == "/start":
-                welcome_text = (
-                    "👋 <b>እንኳን ወደ MelaTrack Attendance Bot በደህና መጡ!</b>\n\n"
-                    "ከታች ያለውን Button በመጫን Admin Dashboard መክፈት ይችላሉ።"
-                )
-                keyboard = {
-                    "inline_keyboard": [
-                        [
-                            {"text": "📊 Admin Dashboard (Web App)", "web_app": {"url": f"{WEB_APP_URL}/admin"}}
-                        ]
-                    ]
-                }
-                send_telegram_message(chat_id, welcome_text, reply_markup=keyboard)
-    except Exception as e:
-        print("Webhook Processing Error:", e)
-        
-    return jsonify({"status": "ok"}), 200
-
-@app.route('/api/employees', methods=['POST'])
-def add_employee():
+@app.route('/api/checkin', methods=['POST'])
+def check_in():
     data = request.json or {}
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
+    employee_id = data.get('employee_id')
+    if not employee_id:
+        return jsonify({"error": "Employee ID is required"}), 400
+        
+    conn = None
     try:
+        conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
-            INSERT INTO employees (full_name, department, phone) 
-            VALUES (%s, %s, %s) RETURNING id;
-        """, (data.get('full_name'), data.get('department'), data.get('phone')))
-        new_id = cur.fetchone()[0]
+            INSERT INTO attendance (employee_id, att_date, check_in, status)
+            VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME, 'Present')
+            ON CONFLICT (employee_id, att_date) 
+            DO UPDATE SET check_in = COALESCE(attendance.check_in, EXCLUDED.check_in), status = 'Present';
+        """, (employee_id,))
         conn.commit()
         cur.close()
-        conn.close()
-        return jsonify({"message": "Successfully registered!", "id": new_id}), 201
+        return jsonify({"message": f"ID {employee_id}: Check-in ተመዝግቧል!"}), 200
     except Exception as e:
-        if conn: conn.close()
+        if conn: conn.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
+
+@app.route('/api/checkout', methods=['POST'])
+def check_out():
+    data = request.json or {}
+    employee_id = data.get('employee_id')
+    if not employee_id:
+        return jsonify({"error": "Employee ID is required"}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE attendance 
+            SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME 
+            WHERE employee_id = %s AND att_date = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE;
+        """, (employee_id,))
+        conn.commit()
+        cur.close()
+        return jsonify({"message": f"ID {employee_id}: Check-out ተመዝግቧል!"}), 200
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn: conn.close()
 
 @app.route('/api/report', methods=['GET'])
 def get_report():
-    conn = get_db_connection()
-    if not conn:
-        return jsonify([]), 200
+    conn = None
     try:
+        conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("""
             SELECT e.id, e.full_name, e.department, a.check_in, a.check_out, a.status 
             FROM employees e
-            LEFT JOIN attendance a ON e.id = a.employee_id AND a.att_date = CURRENT_DATE;
+            LEFT JOIN attendance a 
+              ON e.id = a.employee_id 
+             AND a.att_date = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE
+            ORDER BY e.id ASC;
         """)
         rows = cur.fetchall()
         report_data = []
@@ -106,11 +130,12 @@ def get_report():
                 "status": row[5] if row[5] else "Absent"
             })
         cur.close()
-        conn.close()
         return jsonify(report_data), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
         if conn: conn.close()
-        return jsonify([]), 200
 
+# For local development
 if __name__ == '__main__':
     app.run(debug=True)
