@@ -20,7 +20,7 @@ TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}" if BOT_TOKEN else None
 
 def get_db_connection():
     if not DB_URL:
-        raise Exception("Database Connection URL አልተገኘም! Vercel Environment Variables ላይ PRISMA_DATABASE_URL መኖሩን ያረጋግጡ።")
+        raise Exception("Database Connection URL አልተገኘም! Vercel Environment Variables ማረጋገጥ አለብዎት።")
     return psycopg2.connect(DB_URL)
 
 def send_telegram_message(chat_id, text, reply_markup=None):
@@ -34,7 +34,8 @@ def send_telegram_message(chat_id, text, reply_markup=None):
     except Exception as e:
         print("Telegram Send Error:", e)
 
-# 1. Database Init (ቴብሎች ከሌሉ በራሱ ይፈጥራል)
+# 1. Database Manual Init (በአዲሱ /api/init endpoint ብቻ ይፈጠራል)
+@app.route('/api/init', methods=['GET'])
 def init_db():
     conn = None
     try:
@@ -62,14 +63,12 @@ def init_db():
         """)
         conn.commit()
         cur.close()
+        return jsonify({"message": "Database tables initialized successfully!"}), 200
     except Exception as e:
-        print("DB Init Error:", e)
         if conn: conn.rollback()
+        return jsonify({"error": str(e)}), 500
     finally:
         if conn: conn.close()
-
-# አፕሊኬሽኑ ሲነሳ ቴብሎቹን ይፈትሻል
-init_db()
 
 # 2. Telegram Webhook (ቦቱ ምላሽ እንዲሰጥ)
 @app.route('/api/webhook', methods=['POST'])
@@ -124,7 +123,7 @@ def process_tg_attendance(telegram_id, action):
         if action == "check_in":
             cur.execute("""
                 INSERT INTO attendance (employee_id, att_date, check_in, status)
-                VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME, 'Present')
+                VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME(0), 'Present')
                 ON CONFLICT (employee_id, att_date) 
                 DO UPDATE SET check_in = COALESCE(attendance.check_in, EXCLUDED.check_in), status = 'Present';
             """, (emp_id,))
@@ -134,13 +133,14 @@ def process_tg_attendance(telegram_id, action):
         elif action == "check_out":
             cur.execute("""
                 UPDATE attendance 
-                SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME
+                SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME(0)
                 WHERE employee_id = %s AND att_date = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE;
             """, (emp_id,))
             conn.commit()
             send_telegram_message(telegram_id, f"👋 <b>{full_name}</b>፣ Check-Out ተመዝግቧል!")
 
     except Exception as e:
+        if conn: conn.rollback()
         print(f"Attendance TG Error ({action}):", e)
         send_telegram_message(telegram_id, "❌ ስህተት አጋጥሟል! እባክዎ ድጋሚ ይሞክሩ።")
     finally:
@@ -199,7 +199,7 @@ def check_in():
         cur = conn.cursor()
         cur.execute("""
             INSERT INTO attendance (employee_id, att_date, check_in, status)
-            VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME, 'Present')
+            VALUES (%s, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE, (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME(0), 'Present')
             ON CONFLICT (employee_id, att_date) 
             DO UPDATE SET check_in = COALESCE(attendance.check_in, EXCLUDED.check_in), status = 'Present';
         """, (employee_id,))
@@ -225,7 +225,7 @@ def check_out():
         cur = conn.cursor()
         cur.execute("""
             UPDATE attendance 
-            SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME 
+            SET check_out = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::TIME(0)
             WHERE employee_id = %s AND att_date = (NOW() AT TIME ZONE 'Africa/Addis_Ababa')::DATE;
         """, (employee_id,))
         conn.commit()
@@ -258,13 +258,14 @@ def get_report():
                 "id": row[0],
                 "full_name": row[1],
                 "department": row[2],
-                "check_in": str(row[3]) if row[3] else "-",
-                "check_out": str(row[4]) if row[4] else "-",
+                "check_in": str(row[3])[:8] if row[3] else "-",
+                "check_out": str(row[4])[:8] if row[4] else "-",
                 "status": row[5] if row[5] else "Absent"
             })
         cur.close()
         return jsonify(report_data), 200
     except Exception as e:
+        if conn: conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         if conn: conn.close()
