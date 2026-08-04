@@ -11,7 +11,8 @@
         * { box-sizing: border-box; }
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #eef2f5; 
+            background: var(--tg-theme-bg-color, #eef2f5); 
+            color: var(--tg-theme-text-color, #2c3e50);
             display: flex; 
             justify-content: center; 
             align-items: center; 
@@ -20,7 +21,7 @@
             padding: 15px; 
         }
         .card { 
-            background: white; 
+            background: var(--tg-theme-secondary-bg-color, white); 
             padding: 30px 25px; 
             border-radius: 12px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
@@ -28,7 +29,7 @@
             max-width: 400px; 
             text-align: center; 
         }
-        h1 { color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
+        h1 { color: var(--tg-theme-text-color, #2c3e50); font-size: 22px; margin-bottom: 5px; }
         p { color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
         .form-group { margin-bottom: 20px; }
         input { 
@@ -54,10 +55,11 @@
             transition: 0.2s; 
             color: white; 
         }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-checkin { background: #2ecc71; }
-        .btn-checkin:hover { background: #27ae60; }
+        .btn-checkin:hover:not(:disabled) { background: #27ae60; }
         .btn-checkout { background: #e74c3c; }
-        .btn-checkout:hover { background: #c0392b; }
+        .btn-checkout:hover:not(:disabled) { background: #c0392b; }
         #msg { margin-top: 20px; font-weight: bold; font-size: 14px; min-height: 20px; }
     </style>
 </head>
@@ -68,12 +70,12 @@
         <p>የሰራተኛ መግቢያ እና መውጫ መቆጣጠሪያ</p>
 
         <div class="form-group">
-            <input type="number" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required>
+            <input type="number" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required onkeydown="if(event.key==='Enter') handleAttendance('checkin')">
         </div>
 
         <div class="btn-group">
-            <button type="button" class="btn-checkin" onclick="handleAttendance('checkin')">📥 Check In</button>
-            <button type="button" class="btn-checkout" onclick="handleAttendance('checkout')">📤 Check Out</button>
+            <button type="button" id="btnIn" class="btn-checkin" onclick="handleAttendance('checkin')">📥 Check In</button>
+            <button type="button" id="btnOut" class="btn-checkout" onclick="handleAttendance('checkout')">📤 Check Out</button>
         </div>
 
         <div id="msg"></div>
@@ -90,6 +92,8 @@
             const empIdInput = document.getElementById('empId');
             const empId = empIdInput.value.trim();
             const msgDiv = document.getElementById('msg');
+            const btnIn = document.getElementById('btnIn');
+            const btnOut = document.getElementById('btnOut');
 
             if (!empId) {
                 msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ID ያስገቡ!";
@@ -97,6 +101,9 @@
                 return;
             }
 
+            // UI Disable & Loading State
+            btnIn.disabled = true;
+            btnOut.disabled = true;
             msgDiv.innerText = "⏳ በማስመዝገብ ላይ...";
             msgDiv.style.color = "#3498db";
 
@@ -113,7 +120,8 @@
                 if (response.ok) {
                     msgDiv.innerText = `✅ ${data.message || 'በተሳካ ሁኔታ ተመዝግቧል!'}`;
                     msgDiv.style.color = "#27ae60";
-                    empIdInput.value = ''; // Input-ን ባዶ ማድረግ
+                    empIdInput.value = ''; // Input ባዶ ማድረግ
+                    empIdInput.focus();
                 } else {
                     msgDiv.innerText = `❌ ${data.error || 'ስህተት አጋጥሟል'}`;
                     msgDiv.style.color = "#e74c3c";
@@ -121,6 +129,10 @@
             } catch (error) {
                 msgDiv.innerText = "❌ ከሰርቨር ጋር ማገናኘት አልተቻለም!";
                 msgDiv.style.color = "#e74c3c";
+            } finally {
+                // UI Enable back
+                btnIn.disabled = false;
+                btnOut.disabled = false;
             }
         }
     </script>
