@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelaTrack - የሰራተኞች መግቢያ/መውጫ</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
+        .card { background: white; padding: 30px 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        h1 { color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
+        p { color: #7f8c8d; font-size: 14px; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 16px; text-align: center; outline: none; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-checkin { background: #2ecc71; }
+        .btn-checkout { background: #e74c3c; }
+        #msg { margin-top: 20px; font-weight: bold; font-size: 14px; min-height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>⏱️ MelaTrack</h1>
+        <p>የሰራተኛ መግቢያ እና መውጫ መቆጣጠሪያ</p>
+
+        <div class="form-group">
+            <input type="number" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required onkeydown="if(event.key==='Enter') handleAttendance('checkin')">
+        </div>
+
+        <div class="btn-group">
+            <button type="button" id="btnIn" class="btn-checkin" onclick="handleAttendance('checkin')">📥 Check In</button>
+            <button type="button" id="btnOut" class="btn-checkout" onclick="handleAttendance('checkout')">📤 Check Out</button>
+        </div>
+
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        // 🔗 እዚህ ጋር ከ Google የሚያገኘውን Web App URL ተካው
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3SBTJgu2KCwM3rDd_UAAglV6LIXj1XLWtpZCvkYzNigp0GUaTYlacpzkqhyXzdXpY/exec";
+
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+
+        async function handleAttendance(action) {
+            const empIdInput = document.getElementById('empId');
+            const empId = empIdInput.value.trim();
+            const msgDiv = document.getElementById('msg');
+            const btnIn = document.getElementById('btnIn');
+            const btnOut = document.getElementById('btnOut');
+
+            if (!empId) {
+                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ID ያስገቡ!";
+                msgDiv.style.color = "#e67e22";
+                return;
+            }
+
+            btnIn.disabled = true;
+            btnOut.disabled = true;
+            msgDiv.innerText = "⏳ በማስመዝገብ ላይ...";
+            msgDiv.style.color = "#3498db";
+
+            try {
+                // Google Apps Script text/plain መላክ ይፈልጋል CORS እንዳይዘጋው
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: action, employee_id: empId })
+                });
+
+                const data = await response.json();
+
+                if (data.result === 'success') {
+                    msgDiv.innerText = `✅ ${data.message}`;
+                    msgDiv.style.color = "#27ae60";
+                    empIdInput.value = '';
+                    empIdInput.focus();
+                } else {
+                    msgDiv.innerText = `❌ ${data.message}`;
+                    msgDiv.style.color = "#e74c3c";
+                }
+            } catch (error) {
+                msgDiv.innerText = "❌ ማስመዝገብ አልተቻለም! ከኔትወርክ ጋር ተያያዥ ችግር አለ።";
+                msgDiv.style.color = "#e74c3c";
+            } finally {
+                btnIn.disabled = false;
+                btnOut.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
