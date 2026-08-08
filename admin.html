@@ -6,7 +6,7 @@
     <title>MelaTrack - Admin Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 15px; margin: 0; }
-        .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         h1 { color: #2c3e50; font-size: 24px; margin-top: 0; }
         .form-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
         input { padding: 10px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 140px; }
@@ -18,18 +18,14 @@
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #e1e8ed; padding: 10px; text-align: left; font-size: 13px; }
         th { background-color: #f8f9fa; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
+        select.status-select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
         .map-link { color: #3498db; text-decoration: none; font-weight: bold; }
         .map-link:hover { text-decoration: underline; }
         #statusMsg { font-weight: bold; margin-top: 10px; }
-        .home-link { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #3498db; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="/" class="home-link">⬅️ ወደ ሰራተኛ መግቢያ ገፅ ተመለስ</a>
         <h1>📊 MelaTrack - Admin Dashboard</h1>
         
         <h3>➕ አዲስ ሰራተኛ መመዝገቢያ</h3>
@@ -61,7 +57,7 @@
                         <th>መግቢያ</th>
                         <th>መውጫ</th>
                         <th>📍 ቦታ (GPS)</th>
-                        <th>ሁኔታ</th>
+                        <th>ሁኔታ (Status)</th>
                         <th>ድርጊት</th>
                     </tr>
                 </thead>
@@ -139,16 +135,21 @@
 
                     let rowsHtml = '';
                     data.forEach(row => {
-                        const isPresent = row.status === 'Present';
-                        const statusBadge = isPresent 
-                            ? `<span class="badge badge-success">✅ Present</span>` 
-                            : `<span class="badge badge-danger">❌ Absent</span>`;
-
                         let locationCell = '-';
                         if (row.latitude && row.longitude) {
                             const mapUrl = `https://www.google.com/maps?q=${row.latitude},${row.longitude}`;
                             locationCell = `<a href="${mapUrl}" target="_blank" class="map-link">📍 ካርታ አሳይ</a>`;
                         }
+
+                        // Status Dropdown selector
+                        const currentStatus = row.status || 'Absent';
+                        const statusSelector = `
+                            <select class="status-select" onchange="updateEmployeeStatus('${row.id}', this.value)">
+                                <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>✅ Present (ተገኝቷል)</option>
+                                <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>❌ Absent (ቀርቷል)</option>
+                                <option value="Permission" ${currentStatus === 'Permission' ? 'selected' : ''}>📝 Permission (ፈቃድ)</option>
+                            </select>
+                        `;
 
                         rowsHtml += `
                             <tr>
@@ -159,7 +160,7 @@
                                 <td>${escapeHtml(row.check_in || '-')}</td>
                                 <td>${escapeHtml(row.check_out || '-')}</td>
                                 <td>${locationCell}</td>
-                                <td>${statusBadge}</td>
+                                <td>${statusSelector}</td>
                                 <td>
                                     <button class="btn-danger" onclick="deleteEmployee('${row.id}')">🗑️ ሰርዝ</button>
                                 </td>
@@ -172,6 +173,30 @@
                 }
             } catch (err) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">መረጃ ማምጣት አልተቻለም</td></tr>';
+            }
+        }
+
+        async function updateEmployeeStatus(empId, newStatus) {
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        action: 'updateStatus', 
+                        employee_id: empId, 
+                        status: newStatus 
+                    })
+                });
+                const data = await res.json();
+                if (data.result === 'success') {
+                    console.log(`Status updated to ${newStatus}`);
+                } else {
+                    alert("ሁኔታውን መቀየር አልተቻለም፦ " + data.message);
+                    loadReport();
+                }
+            } catch (err) {
+                alert("ከሰርቨሩ ጋር ማገናኘት አልተቻለም!");
+                loadReport();
             }
         }
 
