@@ -3,230 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaTrack - የሰራተኞች መግቢያ/መውጫ</title>
+    <title>MelaTrack - Admin Dashboard</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-        h1 { color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
-        p { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 16px; text-align: center; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: #3498db; }
-        .btn-group { display: flex; gap: 8px; margin-top: 15px; }
-        button { flex: 1; padding: 12px 8px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: background 0.3s; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-checkin { background: #2ecc71; }
-        .btn-checkin:hover:not(:disabled) { background: #27ae60; }
-        .btn-checkout { background: #e74c3c; }
-        .btn-checkout:hover:not(:disabled) { background: #c0392b; }
-        .btn-history { background: #3498db; }
-        .btn-history:hover:not(:disabled) { background: #2980b9; }
-        #msg { margin-top: 15px; font-weight: bold; font-size: 14px; min-height: 20px; word-wrap: break-word; }
-        .location-info { font-size: 12px; color: #7f8c8d; margin-top: 10px; }
-        
-        /* Attendance History Section */
-        .history-section { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 15px; display: none; }
-        .history-section h3 { font-size: 15px; color: #34495e; margin: 0 0 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th, .history-table td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: center; }
-        .history-table th { background: #f8f9fa; color: #555; }
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
-        .badge-in { background: #d4edda; color: #155724; }
-        .badge-out { background: #f8d7da; color: #721c24; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 15px; margin: 0; }
+        .container { max-width: 1050px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h1 { color: #2c3e50; font-size: 24px; margin-top: 0; }
+        .form-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+        input { padding: 10px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 140px; }
+        button { padding: 10px 18px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; padding: 6px 10px; font-size: 12px; }
+        .btn-danger:hover { background: #c0392b; }
+        .table-responsive { overflow-x: auto; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #e1e8ed; padding: 10px; text-align: left; font-size: 13px; }
+        th { background-color: #f8f9fa; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .map-link { color: #3498db; text-decoration: none; font-weight: bold; }
+        .map-link:hover { text-decoration: underline; }
+        #statusMsg { font-weight: bold; margin-top: 10px; }
+        .home-link { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #3498db; font-size: 14px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <a href="/" class="home-link">⬅️ ወደ ሰራተኛ መግቢያ ገፅ ተመለስ</a>
+        <h1>📊 MelaTrack - Admin Dashboard</h1>
+        
+        <h3>➕ አዲስ ሰራተኛ መመዝገቢያ</h3>
+        <form id="addEmpForm" onsubmit="addEmployee(event)">
+            <div class="form-group">
+                <input type="text" id="name" placeholder="ሙሉ ስም" required>
+                <input type="text" id="dept" placeholder="የስራ ክፍል" required>
+                <input type="text" id="phone" placeholder="ስልክ ቁጥር" required>
+                <button type="submit" id="submitBtn">መዝግብ</button>
+            </div>
+        </form>
+        <div id="statusMsg"></div>
 
-    <div class="card">
-        <h1>⏱️ MelaTrack</h1>
-        <p>የሰራተኛ መግቢያ እና መውጫ መቆጣጠሪያ</p>
+        <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
 
-        <div class="form-group">
-            <input type="text" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required onkeydown="if(event.key==='Enter') startAttendanceProcess('checkin')">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <h3>📅 የዛሬ የክትትል ሪፖርት</h3>
+            <button onclick="loadReport()">🔄 ሪፖርት አድስ</button>
         </div>
 
-        <div class="btn-group">
-            <button type="button" id="btnIn" class="btn-checkin" onclick="startAttendanceProcess('checkin')">📥 Check In</button>
-            <button type="button" id="btnOut" class="btn-checkout" onclick="startAttendanceProcess('checkout')">📤 Check Out</button>
-            <button type="button" id="btnHist" class="btn-history" onclick="loadHistoryOnly()">📜 ታሪክ</button>
-        </div>
-
-        <div id="msg"></div>
-        <div class="location-info">📍 መገኘትዎ በ GPS የሚረጋገጥ ነው</div>
-
-        <!-- 📜 Attendance Log Section -->
-        <div id="historySection" class="history-section">
-            <h3>📜 የቅርብ ጊዜ ታሪክ</h3>
-            <table class="history-table">
+        <div class="table-responsive">
+            <table>
                 <thead>
                     <tr>
-                        <th>ቀን</th>
-                        <th>ሰዓት</th>
-                        <th>አይነት</th>
+                        <th>ID</th>
+                        <th>ስም</th>
+                        <th>የስራ ክፍል</th>
+                        <th>ስልክ</th>
+                        <th>መግቢያ</th>
+                        <th>መውጫ</th>
+                        <th>📍 ቦታ (GPS)</th>
+                        <th>ሁኔታ</th>
+                        <th>ድርጊት</th>
                     </tr>
                 </thead>
-                <tbody id="historyBody">
-                    <!-- የመዝገብ ዝርዝር እዚህ ይገባል -->
+                <tbody id="reportTable">
+                    <tr><td colspan="9" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3SBTJgu2KCwM3rDd_UAAglV6LIXj1XLWtpZCvkYzNigp0GUaTYlacpzkqhyXzdXpY/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxp84JvoG3EIqxGF1nMXh1y-dI6ORjqqFJH8uyObQEoLvIFM03lJN8RJgG8Iil1aKnq/exec";
 
-        // 🎯 የመስሪያ ቤቱ የ GPS ቁጥሮች
-        const COMPANY_LAT = 8.9806;  
-        const COMPANY_LNG = 38.7578; 
-        const MAX_DISTANCE_METERS = 100;
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c;
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
         }
 
-        function setButtonsState(disabled) {
-            document.getElementById('btnIn').disabled = disabled;
-            document.getElementById('btnOut').disabled = disabled;
-            document.getElementById('btnHist').disabled = disabled;
-        }
+        async function addEmployee(event) {
+            event.preventDefault();
+            const msgDiv = document.getElementById('statusMsg');
+            const submitBtn = document.getElementById('submitBtn');
 
-        async function startAttendanceProcess(action) {
-            const empIdInput = document.getElementById('empId');
-            const empId = empIdInput.value.trim();
-            const msgDiv = document.getElementById('msg');
-
-            if (!empId) {
-                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ID ያስገቡ!";
-                msgDiv.style.color = "#e67e22";
-                empIdInput.focus();
-                return;
-            }
-
-            if (!navigator.geolocation) {
-                msgDiv.innerText = "❌ ብራውዘርዎ የ GPS መከታተያ አይደግፍም!";
-                msgDiv.style.color = "#e74c3c";
-                return;
-            }
-
-            setButtonsState(true);
-            msgDiv.innerText = "📍 ቦታዎን በማረጋገጥ ላይ...";
+            submitBtn.disabled = true;
+            msgDiv.innerText = "⏳ እየመዘገበ ነው...";
             msgDiv.style.color = "#3498db";
 
-            navigator.geolocation.getCurrentPosition(
-                async (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const distance = calculateDistance(COMPANY_LAT, COMPANY_LNG, userLat, userLng);
+            const payload = {
+                action: 'addEmployee',
+                full_name: document.getElementById('name').value.trim(),
+                department: document.getElementById('dept').value.trim(),
+                phone: document.getElementById('phone').value.trim()
+            };
 
-                    if (distance > MAX_DISTANCE_METERS) {
-                        msgDiv.innerText = `❌ ከስራ ቦታ ውጪ ነዎት! (ከመስሪያ ቤቱ ${Math.round(distance)} ሜትር ርቀዋል)`;
-                        msgDiv.style.color = "#e74c3c";
-                        setButtonsState(false);
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                if (data.result === 'success') {
+                    msgDiv.innerText = `✅ ተሳክቷል! አዲስ የተሰጠ ID: ${data.id}`;
+                    msgDiv.style.color = "#27ae60";
+                    document.getElementById('addEmpForm').reset();
+                    loadReport();
+                } else {
+                    msgDiv.innerText = "❌ ስህተት፦ " + (data.message || 'ምዝገባው አልተሳካም');
+                    msgDiv.style.color = "#e74c3c";
+                }
+            } catch (err) {
+                msgDiv.innerText = "❌ ከሰርቨሩ ጋር ማገናኘት አልተቻለም!";
+                msgDiv.style.color = "#e74c3c";
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function loadReport() {
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
+            
+            try {
+                const res = await fetch(SCRIPT_URL);
+                const data = await res.json();
+                
+                if (Array.isArray(data)) {
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">ምንም ሰራተኛ አልተመዘገበም</td></tr>';
                         return;
                     }
 
-                    await sendAttendanceData(action, empId, userLat, userLng);
-                },
-                (error) => {
-                    setButtonsState(false);
-                    msgDiv.innerText = "❌ የ GPS ፈቃድ አልተሰጠም ወይም መረጃ ማግኘት አልተቻለም!";
-                    msgDiv.style.color = "#e74c3c";
-                },
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        }
-
-        async function sendAttendanceData(action, empId, lat, lng) {
-            const msgDiv = document.getElementById('msg');
-
-            msgDiv.innerText = "⏳ በማስመዝገብ ላይ...";
-            msgDiv.style.color = "#3498db";
-
-            try {
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ 
-                        action: action, 
-                        employee_id: empId,
-                        latitude: lat,
-                        longitude: lng
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.result === 'success') {
-                    msgDiv.innerText = `✅ ${data.message}`;
-                    msgDiv.style.color = "#27ae60";
-                    // መዝገቡ ከተሳካ በኋላ የሰራተኛውን ታሪክ በራስ-ሰር ያሳያል
-                    fetchHistory(empId);
-                } else {
-                    msgDiv.innerText = `❌ ${data.message || 'ስህተት ተፈጥሯል!'}`;
-                    msgDiv.style.color = "#e74c3c";
-                }
-            } catch (error) {
-                msgDiv.innerText = "❌ ማስመዝገብ አልተቻለም! ከኔትወርክ ጋር ተያያዥ ችግር አለ።";
-                msgDiv.style.color = "#e74c3c";
-            } finally {
-                setButtonsState(false);
-            }
-        }
-
-        async function loadHistoryOnly() {
-            const empId = document.getElementById('empId').value.trim();
-            const msgDiv = document.getElementById('msg');
-
-            if (!empId) {
-                msgDiv.innerText = "⚠️ ታሪክ ለማየት እባክዎን ID ያስገቡ!";
-                msgDiv.style.color = "#e67e22";
-                return;
-            }
-            fetchHistory(empId);
-        }
-
-        async function fetchHistory(empId) {
-            const historySection = document.getElementById('historySection');
-            const historyBody = document.getElementById('historyBody');
-            
-            historySection.style.display = 'block';
-            historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
-
-            try {
-                const response = await fetch(`${SCRIPT_URL}?action=getHistory&employee_id=${encodeURIComponent(empId)}`);
-                const logs = await response.json();
-
-                if (Array.isArray(logs) && logs.length > 0) {
                     let rowsHtml = '';
-                    logs.forEach(log => {
-                        const badgeClass = log.type === 'Check In' ? 'badge-in' : 'badge-out';
+                    data.forEach(row => {
+                        const isPresent = row.status === 'Present';
+                        const statusBadge = isPresent 
+                            ? `<span class="badge badge-success">✅ Present</span>` 
+                            : `<span class="badge badge-danger">❌ Absent</span>`;
+
+                        let locationCell = '-';
+                        if (row.latitude && row.longitude) {
+                            const mapUrl = `https://www.google.com/maps?q=${row.latitude},${row.longitude}`;
+                            locationCell = `<a href="${mapUrl}" target="_blank" class="map-link">📍 ካርታ አሳይ</a>`;
+                        }
+
                         rowsHtml += `
                             <tr>
-                                <td>${log.date}</td>
-                                <td>${log.time}</td>
-                                <td><span class="badge ${badgeClass}">${log.type}</span></td>
+                                <td><b>${escapeHtml(row.id)}</b></td>
+                                <td>${escapeHtml(row.full_name)}</td>
+                                <td>${escapeHtml(row.department || '-')}</td>
+                                <td>${escapeHtml(row.phone || '-')}</td>
+                                <td>${escapeHtml(row.check_in || '-')}</td>
+                                <td>${escapeHtml(row.check_out || '-')}</td>
+                                <td>${locationCell}</td>
+                                <td>${statusBadge}</td>
+                                <td>
+                                    <button class="btn-danger" onclick="deleteEmployee('${row.id}')">🗑️ ሰርዝ</button>
+                                </td>
                             </tr>
                         `;
                     });
-                    historyBody.innerHTML = rowsHtml;
+                    tbody.innerHTML = rowsHtml;
                 } else {
-                    historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">ምንም አይነት የክትትል ታሪክ አልተገኘም</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">ትክክለኛ ያልሆነ መረጃ ደርሷል</td></tr>';
                 }
             } catch (err) {
-                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">ታሪክ ማምጣት አልተቻለም</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">መረጃ ማምጣት አልተቻለም</td></tr>';
             }
         }
+
+        async function deleteEmployee(id) {
+            if (!confirm(`ID ${id} የሆነውን ሰራተኛ ለመሰረዝ እርግጠኛ ነዎት?`)) return;
+
+            try {
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'deleteEmployee', employee_id: id })
+                });
+                const data = await res.json();
+                if (data.result === 'success') {
+                    loadReport();
+                } else {
+                    alert("መሰረዝ አልተቻለም፦ " + (data.message || 'ስህተት ተፈጥሯል'));
+                }
+            } catch (err) {
+                alert("ከሰርቨሩ ጋር ማገናኘት አልተቻለም!");
+            }
+        }
+
+        window.onload = loadReport;
     </script>
 </body>
 </html>
