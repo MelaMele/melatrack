@@ -3,33 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaTrack - የሰራተኞች መግቢያ/መውጫ</title>
+    <title>MelaTrack - የሰራተኞች መግቢያ</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: #eef2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 480px; text-align: center; }
         h1 { color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
-        p { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 16px; text-align: center; outline: none; transition: border-color 0.3s; }
-        input:focus { border-color: #3498db; }
-        .btn-group { display: flex; gap: 8px; margin-top: 15px; }
+        p { color: #7f8c8d; font-size: 13px; margin-bottom: 15px; }
+        
+        .id-group { display: flex; align-items: center; border: 2px solid #bdc3c7; border-radius: 8px; overflow: hidden; margin-bottom: 15px; }
+        .id-prefix { background: #34495e; color: white; padding: 12px 15px; font-weight: bold; font-size: 16px; }
+        .id-input { border: none; padding: 12px; font-size: 16px; width: 100%; outline: none; }
+        
+        .btn-group { display: flex; gap: 8px; margin-bottom: 15px; }
         button { flex: 1; padding: 12px 8px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: background 0.3s; }
         button:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-checkin { background: #2ecc71; }
-        .btn-checkin:hover:not(:disabled) { background: #27ae60; }
         .btn-checkout { background: #e74c3c; }
-        .btn-checkout:hover:not(:disabled) { background: #c0392b; }
         .btn-history { background: #3498db; }
-        .btn-history:hover:not(:disabled) { background: #2980b9; }
-        #msg { margin-top: 15px; font-weight: bold; font-size: 14px; min-height: 20px; word-wrap: break-word; }
-        .location-info { font-size: 12px; color: #7f8c8d; margin-top: 10px; }
+        .btn-leave { background: #f39c12; width: 100%; margin-top: 5px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; }
+        .stat-box { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; }
+        .stat-num { font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .stat-label { font-size: 11px; color: #7f8c8d; margin-top: 3px; }
+
+        textarea { width: 100%; border: 1px solid #bdc3c7; border-radius: 8px; padding: 10px; font-size: 13px; outline: none; margin-top: 10px; resize: none; }
+        #msg { margin-top: 10px; font-weight: bold; font-size: 13px; min-height: 20px; word-wrap: break-word; }
         
-        .history-section { margin-top: 20px; text-align: left; border-top: 1px solid #eee; padding-top: 15px; display: none; }
-        .history-section h3 { font-size: 15px; color: #34495e; margin: 0 0 10px 0; }
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table th, .history-table td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: center; }
-        .history-table th { background: #f8f9fa; color: #555; }
-        .badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .history-section { margin-top: 15px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; display: none; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .history-table th, .history-table td { padding: 6px; border-bottom: 1px solid #eee; text-align: center; }
+        .badge { padding: 2px 5px; border-radius: 4px; font-size: 10px; font-weight: bold; }
         .badge-in { background: #d4edda; color: #155724; }
         .badge-out { background: #f8d7da; color: #721c24; }
     </style>
@@ -38,30 +43,46 @@
 
     <div class="card">
         <h1>⏱️ MelaTrack</h1>
-        <p>የሰራተኛ መግቢያ እና መውጫ መቆጣጠሪያ</p>
+        <p>የሰራተኞች ገፅ (በራሶ ስልክ ብቻ ይግቡ)</p>
 
-        <div class="form-group">
-            <input type="text" id="empId" placeholder="የሰራተኛ ID ያስገቡ" autofocus required onkeydown="if(event.key==='Enter') startAttendanceProcess('checkin')">
+        <div class="id-group">
+            <span class="id-prefix">EMP-</span>
+            <input type="number" id="empNum" class="id-input" placeholder="ቁጥር ብቻ (ምሳሌ: 001)" autofocus>
         </div>
 
         <div class="btn-group">
-            <button type="button" id="btnIn" class="btn-checkin" onclick="startAttendanceProcess('checkin')">📥 Check In</button>
-            <button type="button" id="btnOut" class="btn-checkout" onclick="startAttendanceProcess('checkout')">📤 Check Out</button>
-            <button type="button" id="btnHist" class="btn-history" onclick="loadHistoryOnly()">📜 ታሪክ</button>
+            <button type="button" id="btnIn" class="btn-checkin" onclick="startAttendance('checkin')">📥 Check In</button>
+            <button type="button" id="btnOut" class="btn-checkout" onclick="startAttendance('checkout')">📤 Check Out</button>
+            <button type="button" id="btnHist" class="btn-history" onclick="loadEmployeeStats()">📊 ሪፖርቴን አሳይ</button>
         </div>
 
+        <!-- የሰራተኛው የራሱ አጭር ሪፖርት ማሳያ -->
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-num" id="statWorked">0</div>
+                <div class="stat-label">የተሰራበት ቀን</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num" id="statLate" style="color: #e67e22;">0</div>
+                <div class="stat-label">የዘገየበት ቀን</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-num" id="statLeave" style="color: #e74c3c;">0</div>
+                <div class="stat-label">ፈቃድ / ቀሪ</div>
+            </div>
+        </div>
+
+        <!-- ከስራ ሲቀሩ መልእክት መላኪያ -->
+        <textarea id="leaveReason" rows="2" placeholder="ከስራ የሚቀሩ ከሆነ ወይም ፈቃድ የሚጠይቁ ከሆነ ምክንያቱን እዚህ ይጻፉ..."></textarea>
+        <button type="button" class="btn-leave" onclick="sendLeaveMessage()">📝 የፈቃድ / የቀሪ መልእክት ላክ</button>
+
         <div id="msg"></div>
-        <div class="location-info">📍 መገኘትዎ በ GPS የሚረጋገጥ ነው</div>
 
         <div id="historySection" class="history-section">
-            <h3>📜 የቅርብ ጊዜ ታሪክ</h3>
+            <h4 style="margin: 5px 0;">📜 የቅርብ ጊዜ ታሪክ</h4>
             <table class="history-table">
                 <thead>
-                    <tr>
-                        <th>ቀን</th>
-                        <th>ሰዓት</th>
-                        <th>አይነት</th>
-                    </tr>
+                    <tr><th>ቀን</th><th>ሰዓት</th><th>አይነት</th></tr>
                 </thead>
                 <tbody id="historyBody"></tbody>
             </table>
@@ -69,85 +90,56 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOruaI2ZUtLBohqmwzg23NxW-fGxwHfKOxApxCLy0TD6BLZY0Ts1sf1fXoXSpX4_zP/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3SBTJgu2KCwM3rDd_UAAglV6LIXj1XLWtpZCvkYzNigp0GUaTYlacpzkqhyXzdXpY/exec";
 
-        const COMPANY_LAT = 8.8865312;  
-        const COMPANY_LNG = 38.7799663; 
-        const MAX_DISTANCE_METERS = 100;
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) *
-                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-            return R * c;
+        // የስልኩን አድራሻ (Unique Device ID) መፍጠሪያ ወይም ማምጫ
+        function getDeviceId() {
+            let deviceId = localStorage.getItem('melatrack_device_id');
+            if (!deviceId) {
+                deviceId = 'DEV-' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+                localStorage.setItem('melatrack_device_id', deviceId);
+            }
+            return deviceId;
         }
 
-        function setButtonsState(disabled) {
-            document.getElementById('btnIn').disabled = disabled;
-            document.getElementById('btnOut').disabled = disabled;
-            document.getElementById('btnHist').disabled = disabled;
+        function getFullEmpId() {
+            const num = document.getElementById('empNum').value.trim();
+            if (!num) return null;
+            return "EMP-" + num.padStart(3, '0');
         }
 
-        async function startAttendanceProcess(action) {
-            const empIdInput = document.getElementById('empId');
-            const empId = empIdInput.value.trim();
+        async function startAttendance(action) {
+            const empId = getFullEmpId();
             const msgDiv = document.getElementById('msg');
-
             if (!empId) {
-                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ID ያስገቡ!";
+                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ቁጥር ያስገቡ!";
                 msgDiv.style.color = "#e67e22";
-                empIdInput.focus();
                 return;
             }
 
             if (!navigator.geolocation) {
-                msgDiv.innerText = "❌ ብራውዘርዎ የ GPS መከታተያ አይደግፍም!";
+                msgDiv.innerText = "❌ ብራውዘርዎ GPS አይደግፍም!";
                 msgDiv.style.color = "#e74c3c";
                 return;
             }
 
-            setButtonsState(true);
-            msgDiv.innerText = "📍 ቦታዎን በማረጋገጥ ላይ...";
+            msgDiv.innerText = "📍 ቦታዎን እና ስልክዎን በማረጋገጥ ላይ...";
             msgDiv.style.color = "#3498db";
 
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const distance = calculateDistance(COMPANY_LAT, COMPANY_LNG, userLat, userLng);
-
-                    if (distance > MAX_DISTANCE_METERS) {
-                        msgDiv.innerText = `❌ ከስራ ቦታ ውጪ ነዎት! (ከመስሪያ ቤቱ ${Math.round(distance)} ሜትር ርቀዋል)`;
-                        msgDiv.style.color = "#e74c3c";
-                        setButtonsState(false);
-                        return;
-                    }
-
-                    await sendAttendanceData(action, empId, userLat, userLng);
+                    await sendData(action, empId, position.coords.latitude, position.coords.longitude);
                 },
                 (error) => {
-                    setButtonsState(false);
-                    msgDiv.innerText = "❌ የ GPS ፈቃድ አልተሰጠም ወይም መረጃ ማግኘት አልተቻለም!";
+                    msgDiv.innerText = "❌ የ GPS ፈቃድ አልተሰጠም!";
                     msgDiv.style.color = "#e74c3c";
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
         }
 
-        async function sendAttendanceData(action, empId, lat, lng) {
+        async function sendData(action, empId, lat, lng) {
             const msgDiv = document.getElementById('msg');
-
-            msgDiv.innerText = "⏳ በማስመዝገብ ላይ...";
-            msgDiv.style.color = "#3498db";
-
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -155,70 +147,101 @@
                     body: JSON.stringify({ 
                         action: action, 
                         employee_id: empId,
+                        device_id: getDeviceId(),
                         latitude: lat,
                         longitude: lng
                     })
                 });
-
                 const data = await response.json();
-
                 if (data.result === 'success') {
                     msgDiv.innerText = `✅ ${data.message}`;
                     msgDiv.style.color = "#27ae60";
-                    fetchHistory(empId);
+                    loadEmployeeStats();
                 } else {
-                    msgDiv.innerText = `❌ ${data.message || 'ስህተት ተፈጥሯል!'}`;
+                    msgDiv.innerText = `❌ ${data.message}`;
                     msgDiv.style.color = "#e74c3c";
                 }
-            } catch (error) {
-                msgDiv.innerText = "❌ ማስመዝገብ አልተቻለም! ከኔትወርክ ጋር ተያያዥ ችግር አለ።";
+            } catch (err) {
+                msgDiv.innerText = "❌ ከሰርቨር ጋር ማገናኘት አልተቻለም!";
                 msgDiv.style.color = "#e74c3c";
-            } finally {
-                setButtonsState(false);
             }
         }
 
-        async function loadHistoryOnly() {
-            const empId = document.getElementById('empId').value.trim();
+        async function sendLeaveMessage() {
+            const empId = getFullEmpId();
+            const reason = document.getElementById('leaveReason').value.trim();
             const msgDiv = document.getElementById('msg');
 
-            if (!empId) {
-                msgDiv.innerText = "⚠️ ታሪክ ለማየት እባክዎን ID ያስገቡ!";
+            if (!empId || !reason) {
+                msgDiv.innerText = "⚠️ እባክዎን የሰራተኛ ቁጥር እና ምክንያቱን ይጻፉ!";
                 msgDiv.style.color = "#e67e22";
                 return;
             }
-            fetchHistory(empId);
-        }
 
-        async function fetchHistory(empId) {
-            const historySection = document.getElementById('historySection');
-            const historyBody = document.getElementById('historyBody');
-            
-            historySection.style.display = 'block';
-            historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
+            msgDiv.innerText = "⏳ መልእክት በመላክ ላይ...";
+            msgDiv.style.color = "#3498db";
 
             try {
-                const response = await fetch(`${SCRIPT_URL}?action=getHistory&employee_id=${encodeURIComponent(empId)}`);
-                const logs = await response.json();
-
-                if (Array.isArray(logs) && logs.length > 0) {
-                    let rowsHtml = '';
-                    logs.forEach(log => {
-                        const badgeClass = log.type === 'Check In' ? 'badge-in' : 'badge-out';
-                        rowsHtml += `
-                            <tr>
-                                <td>${log.date}</td>
-                                <td>${log.time}</td>
-                                <td><span class="badge ${badgeClass}">${log.type}</span></td>
-                            </tr>
-                        `;
-                    });
-                    historyBody.innerHTML = rowsHtml;
+                const res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'leaveRequest',
+                        employee_id: empId,
+                        device_id: getDeviceId(),
+                        reason: reason
+                    })
+                });
+                const data = await res.json();
+                if (data.result === 'success') {
+                    msgDiv.innerText = "✅ የፈቃድ መልእክቱ ለአድሚን ተልኳል!";
+                    msgDiv.style.color = "#27ae60";
+                    document.getElementById('leaveReason').value = '';
                 } else {
-                    historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">ምንም አይነት የክትትል ታሪክ አልተገኘም</td></tr>';
+                    msgDiv.innerText = "❌ " + data.message;
+                    msgDiv.style.color = "#e74c3c";
                 }
             } catch (err) {
-                historyBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:red;">ታሪክ ማምጣት አልተቻለም</td></tr>';
+                msgDiv.innerText = "❌ መልእክቱን መላክ አልተቻለም!";
+                msgDiv.style.color = "#e74c3c";
+            }
+        }
+
+        async function loadEmployeeStats() {
+            const empId = getFullEmpId();
+            const msgDiv = document.getElementById('msg');
+            if (!empId) {
+                msgDiv.innerText = "⚠️ ሪፖርት ለማየት የሰራተኛ ቁጥር ያስገቡ!";
+                msgDiv.style.color = "#e67e22";
+                return;
+            }
+
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=getEmployeeSummary&employee_id=${encodeURIComponent(empId)}`);
+                const data = await res.json();
+                
+                if (data.result === 'success') {
+                    document.getElementById('statWorked').innerText = data.worked_days;
+                    document.getElementById('statLate').innerText = data.late_days;
+                    document.getElementById('statLeave').innerText = data.leave_days;
+
+                    const historySection = document.getElementById('historySection');
+                    const historyBody = document.getElementById('historyBody');
+                    historySection.style.display = 'block';
+
+                    let rows = '';
+                    (data.logs || []).forEach(log => {
+                        rows += `<tr><td>${log.date}</td><td>${log.time}</td><td>${log.type}</td></tr>`;
+                    });
+                    historyBody.innerHTML = rows || '<tr><td colspan="3">ምንም ታሪክ አልተገኘም</td></tr>';
+                    msgDiv.innerText = "";
+                } else {
+                    msgDiv.innerText = "❌ " + data.message;
+                    msgDiv.style.color = "#e74c3c";
+                }
+            } catch (err) {
+                msgDiv.innerText = "❌ መረጃ ማምጣት አልተቻለም!";
+                msgDiv.style.color = "#e74c3c";
             }
         }
     </script>
