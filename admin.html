@@ -6,218 +6,192 @@
     <title>MelaTrack - Admin Dashboard</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 15px; margin: 0; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h1 { color: #2c3e50; font-size: 24px; margin-top: 0; }
-        .form-group { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
-        input { padding: 10px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 14px; flex: 1; min-width: 140px; }
-        button { padding: 10px 18px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        h1 { color: #2c3e50; font-size: 22px; margin: 0; }
+        .btn-emp-link { background: #27ae60; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px; }
+        
+        .card-box { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-top: 15px; }
+        .form-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        input, select { padding: 8px 12px; border: 1px solid #cccccc; border-radius: 6px; font-size: 13px; }
+        button { padding: 8px 15px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
         button:hover { background: #2980b9; }
-        .btn-danger { background: #e74c3c; padding: 6px 10px; font-size: 12px; }
-        .btn-danger:hover { background: #c0392b; }
+        
         .table-responsive { overflow-x: auto; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #e1e8ed; padding: 10px; text-align: left; font-size: 13px; }
-        th { background-color: #f8f9fa; }
-        select.status-select { padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; }
-        .map-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        .map-link:hover { text-decoration: underline; }
-        #statusMsg { font-weight: bold; margin-top: 10px; }
+        th, td { border: 1px solid #e1e8ed; padding: 8px; text-align: left; font-size: 12px; }
+        th { background-color: #f1f3f5; }
+        
+        .badge-leave { background: #fff3cd; color: #856404; padding: 3px 6px; border-radius: 4px; font-size: 11px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 MelaTrack - Admin Dashboard</h1>
-        
-        <h3>➕ አዲስ ሰራተኛ መመዝገቢያ</h3>
-        <form id="addEmpForm" onsubmit="addEmployee(event)">
-            <div class="form-group">
-                <input type="text" id="name" placeholder="ሙሉ ስም" required>
-                <input type="text" id="dept" placeholder="የስራ ክፍል" required>
-                <input type="text" id="phone" placeholder="ስልክ ቁጥር" required>
-                <button type="submit" id="submitBtn">መዝግብ</button>
-            </div>
-        </form>
-        <div id="statusMsg"></div>
-
-        <hr style="margin: 25px 0; border: 0; border-top: 1px solid #eee;">
-
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <h3>📅 የዛሬ የክትትል ሪፖርት</h3>
-            <button onclick="loadReport()">🔄 ሪፖርት አድስ</button>
+        <div class="header-flex">
+            <h1>📊 MelaTrack - Admin Dashboard</h1>
+            <a href="index.html" target="_blank" class="btn-emp-link">🔗 ወደ ሰራተኛ ገፅ ሂድ</a>
         </div>
 
-        <div class="table-responsive">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ስም</th>
-                        <th>የስራ ክፍል</th>
-                        <th>ስልክ</th>
-                        <th>መግቢያ</th>
-                        <th>መውጫ</th>
-                        <th>📍 ቦታ (GPS)</th>
-                        <th>ሁኔታ (Status)</th>
-                        <th>ድርጊት</th>
-                    </tr>
-                </thead>
-                <tbody id="reportTable">
-                    <tr><td colspan="9" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
-                </tbody>
-            </table>
+        <!-- 1. GPS ማረጋገጫ ማስተካከያ -->
+        <div class="card-box">
+            <h4 style="margin-top: 0;">📍 የ GPS ቦታ ማረጋገጫ Config</h4>
+            <div class="form-group">
+                <input type="text" id="gpsLat" placeholder="Latitude (ምሳሌ: 8.9806)">
+                <input type="text" id="gpsLng" placeholder="Longitude (ምሳሌ: 38.7578)">
+                <input type="number" id="gpsRadius" placeholder="ከፍተኛ ርቀት (ሜትር)" value="100">
+                <button onclick="saveGPSConfig()">💾 GPS አስቀምጥ</button>
+            </div>
+        </div>
+
+        <!-- 2. አዲስ ሰራተኛ መመዝገቢያ -->
+        <div class="card-box">
+            <h4 style="margin-top: 0;">➕ አዲስ ሰራተኛ መመዝገቢያ</h4>
+            <form id="addEmpForm" onsubmit="addEmployee(event)">
+                <div class="form-group">
+                    <input type="text" id="name" placeholder="ሙሉ ስም" required>
+                    <input type="text" id="dept" placeholder="የስራ ክፍል" required>
+                    <input type="text" id="phone" placeholder="ስልክ ቁጥር" required>
+                    <button type="submit">መዝግብ</button>
+                </div>
+            </form>
+            <div id="statusMsg" style="margin-top: 8px; font-weight: bold;"></div>
+        </div>
+
+        <!-- 3. ካሌንደር እና የዕለታዊ ሪፖርት ማሳያ -->
+        <div class="card-box">
+            <div class="header-flex">
+                <h4>📅 የክትትል ሪፖርት (በቀን መምረጫ)</h4>
+                <div>
+                    <label>ቀን መምረጫ፦ </label>
+                    <input type="date" id="filterDate" onchange="loadReport()">
+                    <button onclick="loadReport()">🔄 አድስ</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ስም</th>
+                            <th>ክፍል</th>
+                            <th>መግቢያ</th>
+                            <th>መውጫ</th>
+                            <th>📍 GPS</th>
+                            <th>የመጣበት ስልክ (Device)</th>
+                            <th>ሁኔታ (Status)</th>
+                            <th>ድርጊት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTable">
+                        <tr><td colspan="9" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. አውቶማቲክ የአጠቃላይ ወርሃዊ/አመታዊ ሪፖርት መቁጠሪያ -->
+        <div class="card-box">
+            <h4>📈 አጠቃላይ የሰራተኞች የተጠቃለለ ሪፖርት (Summary)</h4>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ሰራተኛ ስም</th>
+                            <th>የተሰራበት ጠቅላላ ቀን</th>
+                            <th>የዘገየበት ቀን</th>
+                            <th>ፈቃድ / ቀሪ ቀን</th>
+                            <th>የመጨረሻ መልእክት / ምክንያት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTable">
+                        <tr><td colspan="6" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyOruaI2ZUtLBohqmwzg23NxW-fGxwHfKOxApxCLy0TD6BLZY0Ts1sf1fXoXSpX4_zP/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3SBTJgu2KCwM3rDd_UAAglV6LIXj1XLWtpZCvkYzNigp0GUaTYlacpzkqhyXzdXpY/exec";
 
-        function escapeHtml(text) {
-            if (!text) return '';
-            return String(text).replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
-            });
-        }
+        document.getElementById('filterDate').valueAsDate = new Date();
 
-        async function addEmployee(event) {
-            event.preventDefault();
-            const msgDiv = document.getElementById('statusMsg');
-            const submitBtn = document.getElementById('submitBtn');
-
-            submitBtn.disabled = true;
-            msgDiv.innerText = "⏳ እየመዘገበ ነው...";
-            msgDiv.style.color = "#3498db";
-
+        async function addEmployee(e) {
+            e.preventDefault();
             const payload = {
                 action: 'addEmployee',
                 full_name: document.getElementById('name').value.trim(),
                 department: document.getElementById('dept').value.trim(),
                 phone: document.getElementById('phone').value.trim()
             };
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
-                if (data.result === 'success') {
-                    msgDiv.innerText = `✅ ተሳክቷል! አዲስ የተሰጠ ID: ${data.id}`;
-                    msgDiv.style.color = "#27ae60";
-                    document.getElementById('addEmpForm').reset();
-                    loadReport();
-                } else {
-                    msgDiv.innerText = "❌ ስህተት፦ " + (data.message || 'ምዝገባው አልተሳካም');
-                    msgDiv.style.color = "#e74c3c";
-                }
-            } catch (err) {
-                msgDiv.innerText = "❌ ከሰርቨሩ ጋር ማገናኘት አልተቻለም!";
-                msgDiv.style.color = "#e74c3c";
-            } finally {
-                submitBtn.disabled = false;
-            }
+            const res = await fetch(SCRIPT_URL, { method: 'POST', headers: {'Content-Type': 'text/plain'}, body: JSON.stringify(payload) });
+            const data = await res.json();
+            alert(data.message || "ተመዝግቧል");
+            document.getElementById('addEmpForm').reset();
+            loadReport();
         }
 
         async function loadReport() {
+            const selectedDate = document.getElementById('filterDate').value;
             const tbody = document.getElementById('reportTable');
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">መረጃው እየተጫነ ነው...</td></tr>';
-            
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">እየተጫነ ነው...</td></tr>';
+
             try {
-                const res = await fetch(SCRIPT_URL);
+                const res = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${selectedDate}`);
                 const data = await res.json();
-                
-                if (Array.isArray(data)) {
-                    if (data.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">ምንም ሰራተኛ አልተመዘገበም</td></tr>';
-                        return;
-                    }
 
-                    let rowsHtml = '';
-                    data.forEach(row => {
-                        let locationCell = '-';
-                        if (row.latitude && row.longitude) {
-                            const mapUrl = `https://www.google.com/maps?q=${row.latitude},${row.longitude}`;
-                            locationCell = `<a href="${mapUrl}" target="_blank" class="map-link">📍 ካርታ አሳይ</a>`;
-                        }
+                let rows = '';
+                (data.daily || []).forEach(row => {
+                    const mapUrl = (row.latitude && row.longitude) ? `<a href="https://maps.google.com/?q=${row.latitude},${row.longitude}" target="_blank">📍 ካርታ</a>` : '-';
+                    rows += `
+                        <tr>
+                            <td><b>${row.id}</b></td>
+                            <td>${row.full_name}</td>
+                            <td>${row.department}</td>
+                            <td>${row.check_in || '-'}</td>
+                            <td>${row.check_out || '-'}</td>
+                            <td>${mapUrl}</td>
+                            <td><small>${row.device_id ? '🔒 የተቆለፈ' : '🔓 አልተመዘገበም'}</small></td>
+                            <td><b>${row.status}</b></td>
+                            <td><button onclick="resetDevice('${row.id}')" style="background:#e67e22; font-size:10px;">🔓 ስልክ ቀይር</button></td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = rows || '<tr><td colspan="9" style="text-align:center;">ምንም መረጃ አልተገኘም</td></tr>';
 
-                        // Status Dropdown selector
-                        const currentStatus = row.status || 'Absent';
-                        const statusSelector = `
-                            <select class="status-select" onchange="updateEmployeeStatus('${row.id}', this.value)">
-                                <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>✅ Present (ተገኝቷል)</option>
-                                <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>❌ Absent (ቀርቷል)</option>
-                                <option value="Permission" ${currentStatus === 'Permission' ? 'selected' : ''}>📝 Permission (ፈቃድ)</option>
-                            </select>
-                        `;
+                // Load Overall Summary Table
+                let sumRows = '';
+                (data.summary || []).forEach(s => {
+                    sumRows += `
+                        <tr>
+                            <td><b>${s.id}</b></td>
+                            <td>${s.full_name}</td>
+                            <td><b style="color:green">${s.worked_days}</b></td>
+                            <td><b style="color:orange">${s.late_days}</b></td>
+                            <td><b style="color:red">${s.leave_days}</b></td>
+                            <td><span class="badge-leave">${s.last_reason || '-'}</span></td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('summaryTable').innerHTML = sumRows;
 
-                        rowsHtml += `
-                            <tr>
-                                <td><b>${escapeHtml(row.id)}</b></td>
-                                <td>${escapeHtml(row.full_name)}</td>
-                                <td>${escapeHtml(row.department || '-')}</td>
-                                <td>${escapeHtml(row.phone || '-')}</td>
-                                <td>${escapeHtml(row.check_in || '-')}</td>
-                                <td>${escapeHtml(row.check_out || '-')}</td>
-                                <td>${locationCell}</td>
-                                <td>${statusSelector}</td>
-                                <td>
-                                    <button class="btn-danger" onclick="deleteEmployee('${row.id}')">🗑️ ሰርዝ</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    tbody.innerHTML = rowsHtml;
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">ትክክለኛ ያልሆነ መረጃ ደርሷል</td></tr>';
-                }
             } catch (err) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:red;">መረጃ ማምጣት አልተቻለም</td></tr>';
             }
         }
 
-        async function updateEmployeeStatus(empId, newStatus) {
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ 
-                        action: 'updateStatus', 
-                        employee_id: empId, 
-                        status: newStatus 
-                    })
-                });
-                const data = await res.json();
-                if (data.result === 'success') {
-                    console.log(`Status updated to ${newStatus}`);
-                } else {
-                    alert("ሁኔታውን መቀየር አልተቻለም፦ " + data.message);
-                    loadReport();
-                }
-            } catch (err) {
-                alert("ከሰርቨሩ ጋር ማገናኘት አልተቻለም!");
-                loadReport();
-            }
-        }
-
-        async function deleteEmployee(id) {
-            if (!confirm(`ID ${id} የሆነውን ሰራተኛ ለመሰረዝ እርግጠኛ ነዎት?`)) return;
-
-            try {
-                const res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: 'deleteEmployee', employee_id: id })
-                });
-                const data = await res.json();
-                if (data.result === 'success') {
-                    loadReport();
-                } else {
-                    alert("መሰረዝ አልተቻለም፦ " + (data.message || 'ስህተት ተፈጥሯል'));
-                }
-            } catch (err) {
-                alert("ከሰርቨሩ ጋር ማገናኘት አልተቻለም!");
-            }
+        async function resetDevice(empId) {
+            if (!confirm(`የሰራተኛ ${empId} የተቆለፈ ስልክ እንዲቀየር መፍቀድ ይፈልጋሉ?`)) return;
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {'Content-Type': 'text/plain'},
+                body: JSON.stringify({ action: 'resetDevice', employee_id: empId })
+            });
+            const data = await res.json();
+            alert(data.message);
+            loadReport();
         }
 
         window.onload = loadReport;
