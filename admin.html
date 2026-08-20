@@ -47,7 +47,7 @@
         .bg-permission { background: #f1c40f; color: #333; }
 
         .gps-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; }
+        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; min-height: 35px; display: none; }
         
         /* Footer Styling */
         footer { text-align: center; padding: 15px; font-size: 12px; color: #7f8c8d; font-weight: bold; margin-top: 20px; border-top: 1px solid #e0e0e0; }
@@ -55,7 +55,7 @@
         /* Print Style for PDF */
         @media print {
             body { background: white; padding: 0; }
-            .header, .nav-tabs, .btn, #alertMsg, .no-print { display: none !important; }
+            .header, .nav-tabs, .btn, #alertMsg, .no-print, footer { display: none !important; }
             .card { box-shadow: none; border: none; padding: 0; }
             #printableArea { display: block !important; }
             table { border: 1px solid #333; }
@@ -153,31 +153,8 @@
         </div>
     </div>
 
-    <!-- TAB 4: መቼቶች፣ የሰራተኛ ሊንክ እና አዲስ ሰራተኛ -->
+    <!-- TAB 4: መቼቶች እና አዲስ ሰራተኛ -->
     <div id="tabSettings" class="tab-content">
-        
-        <!-- 🔗 የሰራተኞች ሊንክ እና QR Code ካርድ -->
-        <div class="card" style="background: #ebf5fb; border: 1px solid #3498db;">
-            <div class="card-title" style="color: #2980b9;">🔗 የሰራተኞች ፖርታል ሊንክ (Employee Web App Link)</div>
-            <p style="font-size: 13px; color: #555;">ይህንን ሊንክ ኮፒ በማድረግ ለሰራተኞች በቴሌግራም/SMS ይላኩላቸው ወይም የ QR Code ምስሉን ፕሪንት አድርገው ይስቀሉት።</p>
-            
-            <div class="form-group">
-                <label>የሰራተኞች መግቢያ URL</label>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="employeePortalUrl" value="https://YOUR_EMPLOYEE_WEB_APP_URL.vercel.app" style="font-weight: bold; color: #2c3e50;">
-                    <button class="btn btn-primary" onclick="copyEmployeeLink()">📋 Copy Link</button>
-                </div>
-            </div>
-
-            <div style="margin-top: 15px; text-align: center;">
-                <button class="btn btn-warning" onclick="generateQRCode()">📱 የ QR Code ምስል አሳይ / Generate QR</button>
-                <div id="qrCodeContainer" style="margin-top: 15px; display: none;">
-                    <img id="qrCodeImg" src="" alt="Employee App QR Code" style="border: 2px solid #3498db; padding: 10px; background: white; border-radius: 8px;">
-                    <p style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">ሰራተኞች ይህንን በስልካቸው ስካን በማድረግ በቀጥታ መግባት ይችላሉ።</p>
-                </div>
-            </div>
-        </div>
-
         <div class="grid-2">
             <div class="card">
                 <div class="card-title">➕ አዲስ ሰራተኛ መመዝገቢያ</div>
@@ -237,7 +214,6 @@
 </footer>
 
 <script>
-    // ⚠️ የራስህን Google Apps Script Web App URL እዚህ ቦታ ተካ
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWNmwUdEkv73R4xH_c4rJ76xCCRIWyy7LuQcuhqQiNpjJHlPdXeQ5_suOyxV66BerM/exec";
 
     window.onload = function() {
@@ -326,7 +302,6 @@
         }
     }
 
-    // ወርሃዊ ሪፖርት ማምጫ
     async function loadMonthlyReport() {
         const monthVal = document.getElementById('monthlyFilter').value;
         const monthlyBody = document.getElementById('monthlyReportBody');
@@ -357,7 +332,6 @@
         }
     }
 
-    // ሰራተኛ ከሲስተሙ ላይ መሰረዣ
     async function deleteEmployee(empId, empName) {
         if (!confirm(`እርግጠኛ ነዎት ሰራተኛ ${empName} (ID: ${empId}) ከሲስተሙ ላይ በቋሚነት እንዲሰረዝ ይፈልጋሉ?`)) return;
 
@@ -466,45 +440,15 @@
         }
     }
 
-    // የሰራተኛውን ሊንክ ኮፒ ማድረጊያ
-    function copyEmployeeLink() {
-        const urlInput = document.getElementById('employeePortalUrl');
-        urlInput.select();
-        urlInput.setSelectionRange(0, 99999);
-
-        navigator.clipboard.writeText(urlInput.value).then(() => {
-            showAlert('✅ የሰራተኞች መግቢያ ሊንክ በስኬት ኮፒ ሆኗል!', '#2ecc71');
-        }).catch(() => {
-            showAlert('❌ ኮፒ ማድረግ አልተቻለም!', '#e74c3c');
-        });
-    }
-
-    // የ QR Code ምስል ማመንጫ
-    function generateQRCode() {
-        const portalUrl = document.getElementById('employeePortalUrl').value;
-        const qrContainer = document.getElementById('qrCodeContainer');
-        const qrImg = document.getElementById('qrCodeImg');
-
-        if (!portalUrl || portalUrl.includes("YOUR_EMPLOYEE_WEB_APP_URL")) {
-            showAlert('⚠️ እባክዎን አስቀድመው ትክክለኛውን የሰራተኛ Web App URL ያስገቡ!', '#f39c12');
-            return;
-        }
-
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(portalUrl)}`;
-        qrImg.src = qrApiUrl;
-        qrContainer.style.display = 'block';
-        
-        showAlert('✅ QR Code በስኬት ተዘጋጅቷል!', '#2ecc71');
-    }
-
     function showAlert(text, color) {
         const msg = document.getElementById('alertMsg');
         msg.innerText = text;
         msg.style.backgroundColor = color;
         msg.style.color = 'white';
+        msg.style.display = 'block';
         setTimeout(() => {
             msg.innerText = '';
-            msg.style.backgroundColor = 'transparent';
+            msg.style.display = 'none';
         }, 4000);
     }
 </script>
