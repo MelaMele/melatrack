@@ -6,203 +6,211 @@
     <title>MelaTrack - የአድሚን ዳሽቦርድ</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        body { background-color: #f4f6f9; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 1200px; margin: 0 auto; }
         
-        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; font-size: 24px; }
+        .header { background: #2c3e50; color: white; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .header h1 { margin: 0; font-size: 20px; }
         
+        /* Navigation Tabs */
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; }
+        .tab-btn { background: #e0e6ed; color: #34495e; border: none; padding: 10px 18px; border-radius: 6px 6px 0 0; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: #3498db; color: white; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
         .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; }
+        .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
         
         .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #555; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
         
-        .btn { padding: 10px 16px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; }
-        .btn-primary { background: #3498db; } .btn-primary:hover { background: #2980b9; }
-        .btn-success { background: #2ecc71; } .btn-success:hover { background: #27ae60; }
-        .btn-danger { background: #e74c3c; } .btn-danger:hover { background: #c0392b; }
-        .btn-warning { background: #f39c12; } .btn-warning:hover { background: #d35400; }
-        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; }
+        .btn-primary { background: #3498db; }
+        .btn-success { background: #2ecc71; }
+        .btn-danger { background: #e74c3c; }
+        .btn-warning { background: #f39c12; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 12px; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #2c3e50; font-weight: bold; }
         tr:hover { background: #f1f4f6; }
 
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; }
         .bg-present { background: #2ecc71; }
         .bg-late { background: #e67e22; }
         .bg-absent { background: #e74c3c; }
-        .bg-missed { background: #9b59b6; }
         .bg-permission { background: #f1c40f; color: #333; }
 
         .gps-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        .gps-link:hover { text-decoration: underline; }
-
-        #alertMsg { margin-top: 10px; font-weight: bold; text-align: center; font-size: 14px; }
+        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>📊 MelaTrack - አድሚን ዳሽቦርድ</h1>
+        <h1>📊 MelaTrack - የአድሚን ዳሽቦርድ</h1>
         <div>
-            <label style="font-size: 13px;">📅 ቀን መምረጫ፦ </label>
-            <input type="date" id="reportDate" onchange="loadDashboardData()" style="padding: 6px; border-radius: 5px; border: none;">
+            <label style="font-size: 12px;">📅 ቀን፦ </label>
+            <input type="date" id="reportDate" onchange="loadDashboardData()" style="padding: 5px; border-radius: 5px; border: none;">
         </div>
     </div>
 
-    <div class="grid-2">
-        <!-- 1. አዲስ ሰራተኛ መመዝገቢያ -->
-        <div class="card">
-            <div class="card-title">➕ አዲስ ሰራተኛ መመዝገቢያ</div>
-            <form id="addEmpForm" onsubmit="handleAddEmployee(event)">
-                <div class="form-group">
-                    <label>ሙሉ ስም</label>
-                    <input type="text" id="empName" placeholder="ምሳሌ፦ አለሙ ተስፋዬ" required>
-                </div>
-                <div class="form-group">
-                    <label>ዲፓርትመንት</label>
-                    <input type="text" id="empDept" placeholder="ምሳሌ፦ IT / Accounting" required>
-                </div>
-                <div class="form-group">
-                    <label>ስልክ ቁጥር</label>
-                    <input type="tel" id="empPhone" placeholder="0911000000" required>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>የመግቢያ ሰዓት</label>
-                        <input type="time" id="entryTime" value="08:00" required>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>የመውጫ ሰዓት</label>
-                        <input type="time" id="exitTime" value="17:00" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-success" style="width: 100%;">መዝግብ</button>
-            </form>
-        </div>
-
-        <!-- 2. የድርጅቱ GPS አድራሻ ማስተካከያ -->
-        <div class="card">
-            <div class="card-title">📍 የድርጅቱ GPS አድራሻ (Office Geofence)</div>
-            <form onsubmit="handleSaveGPS(event)">
-                <div class="form-group">
-                    <label>Latitude (ኬክሮስ)</label>
-                    <input type="text" id="officeLat" placeholder="ምሳሌ፦ 9.010793" required>
-                </div>
-                <div class="form-group">
-                    <label>Longitude (ኬንትሮስ)</label>
-                    <input type="text" id="officeLng" placeholder="ምሳሌ፦ 38.761252" required>
-                </div>
-                <div class="form-group">
-                    <label>የመፈቀጃ ራዲየስ (በሜትር)</label>
-                    <input type="number" id="officeRadius" value="100" required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">የ GPS አድራሻ ሴቭ አድርግ</button>
-            </form>
-            <button class="btn btn-warning btn-sm" onclick="getCurrentLocation()" style="width: 100%; margin-top: 8px;">📍 አሁን ያለሁበትን ቦታ ሙላ</button>
-        </div>
+    <!-- የገፆች የበተን ማውጫ (Tabs) -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('tabDaily', event)">📋 የዕለቱ አቴንዳንስ</button>
+        <button class="tab-btn" onclick="switchTab('tabLeaves', event)">📝 የፈቃድ ጥያቄዎች</button>
+        <button class="tab-btn" onclick="switchTab('tabSettings', event)">⚙️ መቼቶች እና አዲስ ሰራተኛ</button>
     </div>
 
     <div id="alertMsg"></div>
 
-    <!-- 3. የዕለቱ የሰራተኞች Attendance ሪፖርት -->
-    <div class="card">
-        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ ሪፖርት</span>
-            <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 ሪፖርት አድስ</button>
-        </div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ስም</th>
-                        <th>ዲፓርትመንት</th>
-                        <th>Check In</th>
-                        <th>Check Out</th>
-                        <th>የተሰራበት ሰዓት</th>
-                        <th>ሁኔታ (Status)</th>
-                        <th>የ GPS ቦታ</th>
-                        <th>ተግባራት</th>
-                    </tr>
-                </thead>
-                <tbody id="dailyReportBody">
-                    <tr><td colspan="9" style="text-align: center;">መረጃ በመጫን ላይ...</td></tr>
-                </tbody>
-            </table>
+    <!-- TAB 1: የዕለቱ የአቴንዳንስ ሪፖርት -->
+    <div id="tabDaily" class="tab-content active">
+        <div class="card">
+            <div class="card-title">
+                <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ (Present / Absent / Permission)</span>
+                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>ስም</th><th>ዲፓርትመንት</th><th>Check In</th><th>Check Out</th><th>የተሰራበት</th><th>Status</th><th>GPS</th><th>ተግባራት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyReportBody">
+                        <tr><td colspan="9" style="text-align: center;">መረጃ በመጫን ላይ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- 4. ጠቅላላ የአጠቃቀም ማጠቃለያ (Summary) -->
-    <div class="card">
-        <div class="card-title">📈 ጠቅላላ የሰራተኞች ታሪክ ማጠቃለያ</div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ስም</th>
-                        <th>የተሰራበት ቀን</th>
-                        <th>የዘገየበት ቀን</th>
-                        <th>ፈቃድ/ቀሪ</th>
-                        <th>የመጨረሻ መልእክት</th>
-                    </tr>
-                </thead>
-                <tbody id="summaryReportBody">
-                    <tr><td colspan="6" style="text-align: center;">መረጃ በመጫን ላይ...</td></tr>
-                </tbody>
-            </table>
+    <!-- TAB 2: የፈቃድ ጥያቄዎች ማስተናገጃ -->
+    <div id="tabLeaves" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>📝 ከሰራተኞች የቀረቡ የፈቃድ / የቀሪ መልእክቶች</span>
+                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ቀን</th><th>ID</th><th>ስም</th><th>ምክንያት</th><th>ውሳኔ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaveRequestsBody">
+                        <tr><td colspan="5" style="text-align: center;">ምንም የፈቃድ ጥያቄ አልተገኘም</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: አዲስ ሰራተኛ መመዝገቢያ እና የ GPS መቼት -->
+    <div id="tabSettings" class="tab-content">
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">➕ አዲስ ሰራተኛ መመዝገቢያ</div>
+                <form id="addEmpForm" onsubmit="handleAddEmployee(event)">
+                    <div class="form-group">
+                        <label>ሙሉ ስም</label>
+                        <input type="text" id="empName" placeholder="አለሙ ተስፋዬ" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ዲፓርትመንት</label>
+                        <input type="text" id="empDept" placeholder="IT / Library" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ስልክ ቁጥር</label>
+                        <input type="tel" id="empPhone" placeholder="0911000000" required>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>መግቢያ ሰዓት</label>
+                            <input type="time" id="entryTime" value="08:00" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>መውጫ ሰዓት</label>
+                            <input type="time" id="exitTime" value="17:00" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success" style="width: 100%;">መዝግብ</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title">📍 የድርጅቱ GPS አድራሻ (Geofence)</div>
+                <form onsubmit="handleSaveGPS(event)">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="text" id="officeLat" placeholder="9.010793" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="text" id="officeLng" placeholder="38.761252" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ራዲየስ (በሜትር)</label>
+                        <input type="number" id="officeRadius" value="100" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">GPS ሴቭ አድርግ</button>
+                </form>
+            </div>
         </div>
     </div>
 
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxofAUyS9mNIKJnGsJ2wyqrWc6DxkdtiowcFK0SkhYVeeftGmKj5ZWJdfvA8U6V3iax/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoX5LlVJT1UORG1X15aA08-Xic2t-YZEU9-zWaZ0FqVyXLTVjRfZb-ZFKOLqkukDA4/exec";
 
-    // ገፁ ሲከፈት የዛሬን ቀን መምረጥ እና መረጃዎችን መጫን
     window.onload = function() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('reportDate').value = today;
+        document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
         loadDashboardData();
     };
 
-    // 1. መረጃዎችን ከ Google Apps Script ማምጫ
+    // ገፅ መቀየሪያ (Tab Switcher)
+    function switchTab(tabId, evt) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        if (evt) evt.currentTarget.classList.add('active');
+    }
+
+    // መረጃዎችን ከ Google Sheet ማምጫ
     async function loadDashboardData() {
         const dateVal = document.getElementById('reportDate').value;
         const dailyBody = document.getElementById('dailyReportBody');
-        const summaryBody = document.getElementById('summaryReportBody');
+        const leaveBody = document.getElementById('leaveRequestsBody');
         
         dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
+        leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
 
         try {
             const response = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${dateVal}`);
             const data = await response.json();
 
-            // የዕለቱን ሪፖርት መሙላት
+            // 1. የዕለቱ አቴንዳንስ ሠንጠረዥ
             if (data.daily && data.daily.length > 0) {
                 let dailyHtml = '';
                 data.daily.forEach(item => {
                     let badgeClass = 'bg-absent';
-                    let statusText = item.status;
+                    if (item.status === 'Present') badgeClass = 'bg-present';
+                    if (item.status === 'Late') badgeClass = 'bg-late';
+                    if (item.status === 'Permission') badgeClass = 'bg-permission';
 
-                    if (item.status === 'Present') { badgeClass = 'bg-present'; statusText = 'Present'; }
-                    else if (item.status === 'Late') { badgeClass = 'bg-late'; statusText = 'Late'; }
-                    else if (item.status === 'Missed Check-Out') { badgeClass = 'bg-missed'; statusText = 'Missed Out'; }
-                    else if (item.status === 'Permission') { badgeClass = 'bg-permission'; statusText = 'Permission'; }
-                    else { statusText = 'Absent'; }
-
-                    let gpsCell = '-';
-                    if (item.latitude && item.longitude) {
-                        gpsCell = `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="gps-link">📍 ካርታ አሳይ</a>`;
-                    }
+                    let gpsCell = item.latitude && item.longitude ? 
+                        `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="gps-link">📍 ካርታ</a>` : '-';
 
                     dailyHtml += `<tr>
                         <td><b>${item.id}</b></td>
@@ -211,50 +219,76 @@
                         <td>${item.check_in || '-'}</td>
                         <td>${item.check_out || '-'}</td>
                         <td><b>${item.total_hours || '-'}</b></td>
-                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td><span class="badge ${badgeClass}">${item.status}</span></td>
                         <td>${gpsCell}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')" title="የተቆለፈ ስልክ ፍታ">🔓 Reset</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}')" title="ሰራተኛ ሰርዝ">🗑️</button>
+                            <button class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')">🔓 Reset</button>
                         </td>
                     </tr>`;
                 });
                 dailyBody.innerHTML = dailyHtml;
             } else {
-                dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ምንም የተመዘገበ ሰራተኛ የለም።</td></tr>';
+                dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ምንም የተመዘገበ ሰራተኛ አልተገኘም።</td></tr>';
             }
 
-            // የጠቅላላ ማጠቃለያ ሰንጠረዥ መሙላት
+            // 2. የፈቃድ ጥያቄዎች ሠንጠረዥ
             if (data.summary && data.summary.length > 0) {
-                let summaryHtml = '';
-                data.summary.forEach(sum => {
-                    summaryHtml += `<tr>
-                        <td><b>${sum.id}</b></td>
-                        <td>${sum.full_name}</td>
-                        <td><b style="color: #2ecc71;">${sum.worked_days}</b></td>
-                        <td><b style="color: #e67e22;">${sum.late_days}</b></td>
-                        <td><b style="color: #e74c3c;">${sum.leave_days}</b></td>
-                        <td>${sum.last_reason || '-'}</td>
-                    </tr>`;
+                let leaveHtml = '';
+                let hasLeaves = false;
+
+                data.summary.forEach(item => {
+                    if (item.last_reason && item.last_reason !== '-') {
+                        hasLeaves = true;
+                        leaveHtml += `<tr>
+                            <td>${dateVal}</td>
+                            <td><b>${item.id}</b></td>
+                            <td>${item.full_name}</td>
+                            <td>${item.last_reason}</td>
+                            <td>
+                                <button class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ (Permission)</button>
+                            </td>
+                        </tr>`;
+                    }
                 });
-                summaryBody.innerHTML = summaryHtml;
+
+                leaveBody.innerHTML = hasLeaves ? leaveHtml : '<tr><td colspan="5" style="text-align: center;">ምንም የቀረበ የፈቃድ ጥያቄ የለም።</td></tr>';
             }
 
         } catch (err) {
-            dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም! ኮኔክሽን ያረጋግጡ።</td></tr>';
+            dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
+            leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
         }
     }
 
-    // 2. አዲስ ሰራተኛ መመዝገብ
+    // የፈቃድ ጥያቄ ማጽደቂያ (Permission ማድረግ)
+    async function approveLeave(empId, empName) {
+        if (!confirm(`${empName} (ID: ${empId}) የጠየቁትን ፈቃድ ማጽደቅ ይፈልጋሉ?`)) return;
+
+        showAlert('⏳ ፈቃድ በመስጠት ላይ...', '#3498db');
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'approveLeave', employee_id: empId, employee_name: empName })
+            });
+            const data = await res.json();
+            showAlert('✅ ' + data.message, '#2ecc71');
+            loadDashboardData();
+        } catch (err) {
+            showAlert('❌ ፈቃድ መስጠት አልተቻለም!', '#e74c3c');
+        }
+    }
+
+    // አዲስ ሰራተኛ መመዝገቢያ
     async function handleAddEmployee(e) {
         e.preventDefault();
         showAlert('⏳ ሰራተኛ በመመዝገብ ላይ...', '#3498db');
 
         const payload = {
             action: 'addEmployee',
-            full_name: document.getElementById('empName').value.trim(),
-            department: document.getElementById('empDept').value.trim(),
-            phone: document.getElementById('empPhone').value.trim(),
+            full_name: document.getElementById('empName').value,
+            department: document.getElementById('empDept').value,
+            phone: document.getElementById('empPhone').value,
             entry_time: document.getElementById('entryTime').value,
             exit_time: document.getElementById('exitTime').value
         };
@@ -266,28 +300,24 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            if (data.result === 'success') {
-                showAlert('✅ ' + data.message, '#2ecc71');
-                document.getElementById('addEmpForm').reset();
-                loadDashboardData();
-            } else {
-                showAlert('❌ ' + data.message, '#e74c3c');
-            }
+            showAlert('✅ ' + data.message, '#2ecc71');
+            document.getElementById('addEmpForm').reset();
+            loadDashboardData();
         } catch (err) {
-            showAlert('❌ መመዝገብ አልተቻለም!', '#e74c3c');
+            showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', '#e74c3c');
         }
     }
 
-    // 3. የ ድርጅቱን GPS አድራሻ ማስቀመጥ
+    // የ GPS መቼት ማስቀመጫ
     async function handleSaveGPS(e) {
         e.preventDefault();
-        showAlert('⏳ የ GPS አድራሻ በመቀየር ላይ...', '#3498db');
+        showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', '#3498db');
 
         const payload = {
             action: 'saveGPSConfig',
-            latitude: parseFloat(document.getElementById('officeLat').value),
-            longitude: parseFloat(document.getElementById('officeLng').value),
-            radius: parseInt(document.getElementById('officeRadius').value, 10)
+            latitude: document.getElementById('officeLat').value,
+            longitude: document.getElementById('officeLng').value,
+            radius: document.getElementById('officeRadius').value
         };
 
         try {
@@ -297,21 +327,17 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            if (data.result === 'success') {
-                showAlert('✅ ' + data.message, '#2ecc71');
-            } else {
-                showAlert('❌ ' + data.message, '#e74c3c');
-            }
+            showAlert('✅ የ GPS መቼት በስኬት ተቀምጧል!', '#2ecc71');
         } catch (err) {
-            showAlert('❌ የ GPS አድራሻ ማስቀመጥ አልተቻለም!', '#e74c3c');
+            showAlert('❌ GPS መቼት ሴቭ ማድረግ አልተቻለም!', '#e74c3c');
         }
     }
 
-    // 4. የስልክ ቁልፍ ማንሳት (Reset Device Lock)
+    // የስልክ መቆለፊያ ማንሻ (Reset Device)
     async function resetDevice(empId) {
-        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ እንዲነሳ ይፈልጋሉ?`)) return;
-        
-        showAlert('⏳ የስልክ ቁልፍ በማንሳት ላይ...', '#3498db');
+        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ ማንሳት ይፈልጋሉ?`)) return;
+
+        showAlert('⏳ የስልክ ቁልፍ በመክፈት ላይ...', '#3498db');
         try {
             const res = await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -322,46 +348,19 @@
             showAlert('✅ ' + data.message, '#2ecc71');
             loadDashboardData();
         } catch (err) {
-            showAlert('❌ ማስተካከል አልተቻለም!', '#e74c3c');
-        }
-    }
-
-    // 5. ሰራተኛ መሰረዝ (Delete Employee)
-    async function deleteEmployee(empId) {
-        if (!confirm(`⚠️ እርግጠኛ ነዎት ሰራተኛ ID: ${empId} ከሲስተሙ መሰረዝ ይፈልጋሉ?`)) return;
-
-        showAlert('⏳ ሰራተኛ በመሰረዝ ላይ...', '#3498db');
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'deleteEmployee', employee_id: empId })
-            });
-            const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            loadDashboardData();
-        } catch (err) {
-            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', '#e74c3c');
-        }
-    }
-
-    // አሁን ያለንበትን GPS አድራሻ ፈልጎ ፎርሙ ላይ መሙያ
-    function getCurrentLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                document.getElementById('officeLat').value = pos.coords.latitude;
-                document.getElementById('officeLng').value = pos.coords.longitude;
-                showAlert('📍 የአሁኑ ቦታዎ በፎርሙ ላይ ተሞልቷል!', '#2ecc71');
-            }, () => {
-                showAlert('❌ ቦታዎን ማግኘት አልተቻለም! GPS መብራቱን ያረጋግጡ።', '#e74c3c');
-            });
+            showAlert('❌ Reset ማድረግ አልተቻለም!', '#e74c3c');
         }
     }
 
     function showAlert(text, color) {
         const msg = document.getElementById('alertMsg');
         msg.innerText = text;
-        msg.style.color = color;
+        msg.style.backgroundColor = color;
+        msg.style.color = 'white';
+        setTimeout(() => {
+            msg.innerText = '';
+            msg.style.backgroundColor = 'transparent';
+        }, 4000);
     }
 </script>
 
