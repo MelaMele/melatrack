@@ -3,385 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaTrack - የአድሚን ዳሽቦርድ</title>
+    <title>MelaTrack - ሰራተኛ መግቢያና መውጫ</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 15px; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; flex: 1; width: 100%; }
+        body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
+        .card h2 { margin-top: 0; color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
+        .sub-title { color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
         
-        .header { background: #2c3e50; color: white; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .header h1 { margin: 0; font-size: 20px; }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
         
-        .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; }
-        .tab-btn { background: #e0e6ed; color: #34495e; border: none; padding: 10px 18px; border-radius: 6px 6px 0 0; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .tab-btn.active { background: #3498db; color: white; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-in { background-color: #2ecc71; }
+        .btn-out { background-color: #e74c3c; }
+        .btn-leave { background-color: #f39c12; width: 100%; margin-top: 10px; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        #statusMsg { margin-top: 15px; font-size: 13px; font-weight: bold; padding: 10px; border-radius: 6px; display: none; }
+        .gps-status { font-size: 11px; color: #7f8c8d; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; }
         
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
-        
-        .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; }
-        .btn-primary { background: #3498db; }
-        .btn-success { background: #2ecc71; }
-        .btn-danger { background: #e74c3c; }
-        .btn-warning { background: #f39c12; }
-        .btn-sm { padding: 4px 8px; font-size: 11px; margin-right: 2px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 12px; }
-        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #2c3e50; font-weight: bold; }
-        tr:hover { background: #f1f4f6; }
-
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; color: white; display: inline-block; }
-        .bg-present { background: #2ecc71; }
-        .bg-late { background: #e67e22; }
-        .bg-absent { background: #e74c3c; }
-        .bg-permission { background: #f1c40f; color: #333; }
-
-        .gps-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; }
-        
-        /* Footer Styling */
-        footer { text-align: center; padding: 15px; font-size: 12px; color: #7f8c8d; font-weight: bold; margin-top: 20px; border-top: 1px solid #e0e0e0; }
-
-        /* Print Style for PDF */
-        @media print {
-            body { background: white; padding: 0; }
-            .header, .nav-tabs, .btn, #alertMsg, .no-print { display: none !important; }
-            .card { box-shadow: none; border: none; padding: 0; }
-            #printableArea { display: block !important; }
-            table { border: 1px solid #333; }
-            th, td { border: 1px solid #333; }
-        }
+        .leave-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; text-align: left; }
+        footer { margin-top: 25px; font-size: 11px; color: #bdc3c7; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>📊 MelaTrack - የአድሚን ዳሽቦርድ</h1>
-        <div>
-            <label style="font-size: 12px;">📅 ቀን፦ </label>
-            <input type="date" id="reportDate" onchange="loadDashboardData()" style="padding: 5px; border-radius: 5px; border: none;">
+<div class="card">
+    <h2>🏢 MelaTrack</h2>
+    <div class="sub-title">የሰራተኛ መግቢያና መውጫ ፖርታል</div>
+
+    <div id="statusMsg"></div>
+
+    <div class="form-group">
+        <label for="employeeId">የሰራተኛ ID ቁጥር</label>
+        <input type="text" id="employeeId" placeholder="ምሳሌ፦ EMP-101" required>
+    </div>
+
+    <!-- GPS status ላይ ሲጫኑ እንደገና GPS እንዲፈልግ ተደርጓል -->
+    <div class="gps-status" id="gpsStatus" onclick="getGPSLocation()">
+        📍 GPS አድራሻ በመፈለግ ላይ... (እንደገና ለመፈለግ እዚህ ይጫኑ)
+    </div>
+
+    <div class="btn-group">
+        <button class="btn btn-in" onclick="handleAttendance('CheckIn')">📥 Check In</button>
+        <button class="btn btn-out" onclick="handleAttendance('CheckOut')">📤 Check Out</button>
+    </div>
+
+    <!-- የፈቃድ ጥያቄ ማቅረቢያ -->
+    <div class="leave-section">
+        <div class="form-group">
+            <label for="leaveReason">የቀሪ / የፈቃድ ምክንያት (ካለዎት)</label>
+            <textarea id="leaveReason" rows="2" placeholder="ዛሬ ስራ የማልመጣበት ምክንያት..."></textarea>
         </div>
+        <button class="btn btn-leave" onclick="handleAttendance('Permission')">📝 የፈቃድ ጥያቄ ላክ</button>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('tabDaily', event)">📋 የዕለቱ አቴንዳንስ</button>
-        <button class="tab-btn" onclick="switchTab('tabMonthly', event)">📅 ወርሃዊ ሪፖርት (ለሂሳብ ቤት)</button>
-        <button class="tab-btn" onclick="switchTab('tabLeaves', event)">📝 የፈቃድ ጥያቄዎች</button>
-        <button class="tab-btn" onclick="switchTab('tabSettings', event)">⚙️ መቼቶች እና አዲስ ሰራተኛ</button>
-    </div>
-
-    <div id="alertMsg"></div>
-
-    <!-- TAB 1: የዕለቱ የአቴንዳንስ ሪፖርት -->
-    <div id="tabDaily" class="tab-content active">
-        <div class="card">
-            <div class="card-title">
-                <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ</span>
-                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th><th>ስም</th><th>ዲፓርትመንት</th><th>Check In</th><th>Check Out</th><th>የተሰራበት</th><th>Status</th><th>GPS</th><th>ተግባራት</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dailyReportBody">
-                        <tr><td colspan="9" style="text-align: center;">መረጃ በመጫን ላይ...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 2: ወርሃዊ ሪፖርት (ለሂሳብ ቤት PDF) -->
-    <div id="tabMonthly" class="tab-content">
-        <div class="card" id="printableArea">
-            <div class="card-title">
-                <span>📅 የወርሃዊ ሰራተኞች አቴንዳንስ ማጠቃለያ ሪፖርት</span>
-                <div class="no-print" style="display: flex; gap: 10px; align-items: center;">
-                    <input type="month" id="monthlyFilter" onchange="loadMonthlyReport()" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
-                    <button class="btn btn-success btn-sm" onclick="window.print()">🖨️ PDF አውርድ / Print</button>
-                </div>
-            </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ሰራተኛ ID</th><th>ሙሉ ስም</th><th>ዲፓርትመንት</th><th>የተሰራበት ቀን</th><th>ያረፈደበት ቀን</th><th>በፈቃድ የቀረበት</th>
-                        </tr>
-                    </thead>
-                    <tbody id="monthlyReportBody">
-                        <tr><td colspan="6" style="text-align: center;">እባክዎን ወር ይምረጡ...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 3: የፈቃድ ጥያቄዎች ማስተናገጃ -->
-    <div id="tabLeaves" class="tab-content">
-        <div class="card">
-            <div class="card-title">
-                <span>📝 ከሰራተኞች የቀረቡ የፈቃድ / የቀሪ መልእክቶች</span>
-                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ቀን</th><th>ID</th><th>ስም</th><th>ምክንያት</th><th>ውሳኔ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaveRequestsBody">
-                        <tr><td colspan="5" style="text-align: center;">ምንም የፈቃድ ጥያቄ አልተገኘም</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- TAB 4: መቼቶች እና አዲስ ሰራተኛ -->
-    <div id="tabSettings" class="tab-content">
-        <div class="grid-2">
-            <div class="card">
-                <div class="card-title">➕ አዲስ ሰራተኛ መመዝገቢያ</div>
-                <form id="addEmpForm" onsubmit="handleAddEmployee(event)">
-                    <div class="form-group">
-                        <label>ሙሉ ስም</label>
-                        <input type="text" id="empName" placeholder="አለሙ ተስፋዬ" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ዲፓርትመንት</label>
-                        <input type="text" id="empDept" placeholder="IT / Library" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ስልክ ቁጥር</label>
-                        <input type="tel" id="empPhone" placeholder="0911000000" required>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <div class="form-group" style="flex: 1;">
-                            <label>መግቢያ ሰዓት</label>
-                            <input type="time" id="entryTime" value="08:00" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>መውጫ ሰዓት</label>
-                            <input type="time" id="exitTime" value="17:00" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-success" style="width: 100%;">መዝግብ</button>
-                </form>
-            </div>
-
-            <div class="card">
-                <div class="card-title">📍 የድርጅቱ GPS አድራሻ (Geofence)</div>
-                <form onsubmit="handleSaveGPS(event)">
-                    <div class="form-group">
-                        <label>Latitude</label>
-                        <input type="text" id="officeLat" placeholder="9.010793" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Longitude</label>
-                        <input type="text" id="officeLng" placeholder="38.761252" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ራዲየስ (በሜትር)</label>
-                        <input type="number" id="officeRadius" value="100" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">GPS ሴቭ አድርግ</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    <footer>Powered by Melak Advertising +251913064239</footer>
 </div>
 
-<!-- Footer -->
-<footer>
-    Powered by Melak Advertising +251913064239
-</footer>
-
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWNmwUdEkv73R4xH_c4rJ76xCCRIWyy7LuQcuhqQiNpjJHlPdXeQ5_suOyxV66BerM/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszMPrZV45SvcUv-nCt8v6oKhxJw6DbpD9CnhyhPHZNyT7l0EVks6DaCay53uTkQ8f/exec";
+    
+    let currentLat = null;
+    let currentLng = null;
 
     window.onload = function() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('reportDate').value = today;
-        document.getElementById('monthlyFilter').value = today.substring(0, 7);
-        loadDashboardData();
-        loadMonthlyReport();
+        getGPSLocation();
+        
+        const savedId = localStorage.getItem('melatrack_emp_id');
+        if (savedId) {
+            document.getElementById('employeeId').value = savedId;
+        }
     };
 
-    function switchTab(tabId, evt) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        
-        document.getElementById(tabId).classList.add('active');
-        if (evt) evt.currentTarget.classList.add('active');
-    }
+    function getGPSLocation() {
+        const gpsLabel = document.getElementById('gpsStatus');
+        gpsLabel.innerHTML = '🔄 GPS አድራሻ በመፈለግ ላይ...';
+        gpsLabel.style.color = '#7f8c8d';
 
-    async function loadDashboardData() {
-        const dateVal = document.getElementById('reportDate').value;
-        const dailyBody = document.getElementById('dailyReportBody');
-        const leaveBody = document.getElementById('leaveRequestsBody');
-        
-        dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
-        leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
-
-        try {
-            const response = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${dateVal}`);
-            const data = await response.json();
-
-            if (data.daily && data.daily.length > 0) {
-                let dailyHtml = '';
-                data.daily.forEach(item => {
-                    let badgeClass = 'bg-absent';
-                    if (item.status === 'Present') badgeClass = 'bg-present';
-                    if (item.status === 'Late') badgeClass = 'bg-late';
-                    if (item.status === 'Permission') badgeClass = 'bg-permission';
-
-                    let gpsCell = item.latitude && item.longitude ? 
-                        `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="gps-link">📍 ካርታ</a>` : '-';
-
-                    dailyHtml += `<tr>
-                        <td><b>${item.id}</b></td>
-                        <td>${item.full_name}</td>
-                        <td>${item.department}</td>
-                        <td>${item.check_in || '-'}</td>
-                        <td>${item.check_out || '-'}</td>
-                        <td><b>${item.total_hours || '-'}</b></td>
-                        <td><span class="badge ${badgeClass}">${item.status}</span></td>
-                        <td>${gpsCell}</td>
-                        <td>
-                            <button class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')">🔓 Reset</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}', '${item.full_name}')">🗑️ ሰርዝ</button>
-                        </td>
-                    </tr>`;
-                });
-                dailyBody.innerHTML = dailyHtml;
-            } else {
-                dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ምንም የተመዘገበ ሰራተኛ አልተገኘም።</td></tr>';
-            }
-
-            if (data.summary && data.summary.length > 0) {
-                let leaveHtml = '';
-                let hasLeaves = false;
-
-                data.summary.forEach(item => {
-                    if (item.last_reason && item.last_reason !== '-') {
-                        hasLeaves = true;
-                        leaveHtml += `<tr>
-                            <td>${dateVal}</td>
-                            <td><b>${item.id}</b></td>
-                            <td>${item.full_name}</td>
-                            <td>${item.last_reason}</td>
-                            <td>
-                                <button class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ</button>
-                            </td>
-                        </tr>`;
-                    }
-                });
-
-                leaveBody.innerHTML = hasLeaves ? leaveHtml : '<tr><td colspan="5" style="text-align: center;">ምንም የቀረበ የፈቃድ ጥያቄ የለም።</td></tr>';
-            }
-
-        } catch (err) {
-            dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    currentLat = pos.coords.latitude;
+                    currentLng = pos.coords.longitude;
+                    gpsLabel.innerHTML = '✅ GPS አድራሻ ተገኝቷል (ለማደስ ይጫኑ)';
+                    gpsLabel.style.color = '#2ecc71';
+                },
+                (err) => {
+                    gpsLabel.innerHTML = '❌ GPS መክፈት አልተቻለም! እባክዎን Location ያብሩና እዚህ ይጫኑ';
+                    gpsLabel.style.color = '#e74c3c';
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else {
+            gpsLabel.innerHTML = '❌ የስልክዎ ብራውዘር GPS አያግዝም';
         }
     }
 
-    // ወርሃዊ ሪፖርት ማምጫ
-    async function loadMonthlyReport() {
-        const monthVal = document.getElementById('monthlyFilter').value;
-        const monthlyBody = document.getElementById('monthlyReportBody');
-        monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">⏳ ወርሃዊ ሪፖርት በመጫን ላይ...</td></tr>';
-
-        try {
-            const res = await fetch(`${SCRIPT_URL}?action=getMonthlyReport&month=${monthVal}`);
-            const data = await res.json();
-
-            if (data.report && data.report.length > 0) {
-                let html = '';
-                data.report.forEach(item => {
-                    html += `<tr>
-                        <td><b>${item.id}</b></td>
-                        <td>${item.full_name}</td>
-                        <td>${item.department}</td>
-                        <td><b>${item.days_worked} ቀን</b></td>
-                        <td style="color: #e67e22;"><b>${item.days_late} ቀን</b></td>
-                        <td style="color: #3498db;"><b>${item.days_permission} ቀን</b></td>
-                    </tr>`;
-                });
-                monthlyBody.innerHTML = html;
-            } else {
-                monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ለዚህ ወር ምንም አይነት መረጃ አልተገኘም።</td></tr>';
-            }
-        } catch (err) {
-            monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ ወርሃዊ ሪፖርት ማምጣት አልተቻለም!</td></tr>';
+    function getDeviceId() {
+        let devId = localStorage.getItem('melatrack_device_id');
+        if (!devId) {
+            devId = 'DEV-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now();
+            localStorage.setItem('melatrack_device_id', devId);
         }
+        return devId;
     }
 
-    // ሰራተኛ ከሲስተሙ ላይ መሰረዣ
-    async function deleteEmployee(empId, empName) {
-        if (!confirm(`እርግጠኛ ነዎት ሰራተኛ ${empName} (ID: ${empId}) ከሲስተሙ ላይ በቋሚነት እንዲሰረዝ ይፈልጋሉ?`)) return;
+    async function handleAttendance(type) {
+        const empId = document.getElementById('employeeId').value.trim();
+        const reason = document.getElementById('leaveReason').value.trim();
 
-        showAlert('⏳ ሰራተኛው በመሰረዝ ላይ...', '#e74c3c');
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'deleteEmployee', employee_id: empId })
-            });
-            const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            loadDashboardData();
-            loadMonthlyReport();
-        } catch (err) {
-            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', '#e74c3c');
+        if (!empId) {
+            showMsg('❌ እባክዎን የሰራተኛ ID ቁጥርዎን ያስገቡ!', '#e74c3c');
+            return;
         }
-    }
 
-    async function approveLeave(empId, empName) {
-        if (!confirm(`${empName} (ID: ${empId}) የጠየቁትን ፈቃድ ማጽደቅ ይፈልጋሉ?`)) return;
-
-        showAlert('⏳ ፈቃድ በመስጠት ላይ...', '#3498db');
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'approveLeave', employee_id: empId, employee_name: empName })
-            });
-            const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            loadDashboardData();
-        } catch (err) {
-            showAlert('❌ ፈቃድ መስጠት አልተቻለም!', '#e74c3c');
+        if (type === 'Permission' && !reason) {
+            showMsg('❌ እባክዎን የፈቃድ/የቀሪ ምክንያትዎን ይፃፉ!', '#e74c3c');
+            return;
         }
-    }
 
-    async function handleAddEmployee(e) {
-        e.preventDefault();
-        showAlert('⏳ ሰራተኛ በመመዝገብ ላይ...', '#3498db');
+        if (!currentLat || !currentLng) {
+            getGPSLocation();
+            showMsg('⏳ GPS አድራሻዎን በመፈለግ ላይ ነው... እባክዎን ጥቂት ሰከንድ ቆይተው ድጋሚ ይሞክሩ', '#f39c12');
+            return;
+        }
+
+        localStorage.setItem('melatrack_emp_id', empId);
+        showMsg('⏳ ጥያቄዎ በመላክ ላይ ነው...', '#3498db');
 
         const payload = {
-            action: 'addEmployee',
-            full_name: document.getElementById('empName').value,
-            department: document.getElementById('empDept').value,
-            phone: document.getElementById('empPhone').value,
-            entry_time: document.getElementById('entryTime').value,
-            exit_time: document.getElementById('exitTime').value
+            action: 'logAttendance',
+            employee_id: empId,
+            type: type,
+            latitude: currentLat,
+            longitude: currentLng,
+            device_id: getDeviceId(),
+            reason: reason
         };
 
         try {
@@ -390,67 +150,27 @@
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             });
+
             const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            document.getElementById('addEmpForm').reset();
-            loadDashboardData();
-            loadMonthlyReport();
+
+            if (data.status === 'success') {
+                showMsg('✅ ' + data.message, '#2ecc71');
+                document.getElementById('leaveReason').value = ''; // መስኩን ማፅዳት
+            } else {
+                showMsg('⚠️ ' + data.message, '#e74c3c');
+            }
+
         } catch (err) {
-            showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', '#e74c3c');
+            showMsg('❌ መረጃውን መላክ አልተቻለም! ኢንተርኔትዎን ያረጋግጡ።', '#e74c3c');
         }
     }
 
-    async function handleSaveGPS(e) {
-        e.preventDefault();
-        showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', '#3498db');
-
-        const payload = {
-            action: 'saveGPSConfig',
-            latitude: document.getElementById('officeLat').value,
-            longitude: document.getElementById('officeLng').value,
-            radius: document.getElementById('officeRadius').value
-        };
-
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
-            showAlert('✅ የ GPS መቼት በስኬት ተቀምጧል!', '#2ecc71');
-        } catch (err) {
-            showAlert('❌ GPS መቼት ሴቭ ማድረግ አልተቻለም!', '#e74c3c');
-        }
-    }
-
-    async function resetDevice(empId) {
-        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ ማንሳት ይፈልጋሉ?`)) return;
-
-        showAlert('⏳ የስልክ ቁልፍ በመክፈት ላይ...', '#3498db');
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'resetDevice', employee_id: empId })
-            });
-            const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            loadDashboardData();
-        } catch (err) {
-            showAlert('❌ Reset ማድረግ አልተቻለም!', '#e74c3c');
-        }
-    }
-
-    function showAlert(text, color) {
-        const msg = document.getElementById('alertMsg');
+    function showMsg(text, color) {
+        const msg = document.getElementById('statusMsg');
         msg.innerText = text;
         msg.style.backgroundColor = color;
         msg.style.color = 'white';
-        setTimeout(() => {
-            msg.innerText = '';
-            msg.style.backgroundColor = 'transparent';
-        }, 4000);
+        msg.style.display = 'block';
     }
 </script>
 
