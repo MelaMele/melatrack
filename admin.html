@@ -28,7 +28,8 @@
         .form-group label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #555; }
         .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
         
-        .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; }
+        .btn { padding: 8px 14px; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: #3498db; }
         .btn-success { background: #2ecc71; }
         .btn-danger { background: #e74c3c; }
@@ -47,15 +48,29 @@
         .bg-permission { background: #f1c40f; color: #333; }
 
         .gps-link { color: #3498db; text-decoration: none; font-weight: bold; }
-        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; min-height: 35px; display: none; }
         
-        /* Footer Styling */
+        /* Alert Box */
+        #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 10px 15px; border-radius: 6px; min-height: 40px; display: none; transition: 0.3s; }
+        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        /* Auth Overlay */
+        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.95); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .auth-card { background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 350px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        .auth-card h2 { margin-top: 0; color: #2c3e50; font-size: 18px; }
+        .auth-card input { width: 100%; padding: 10px; margin: 15px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; text-align: center; letter-spacing: 4px; }
+
+        /* Spinner Animations */
+        .spinner { border: 2px solid #f3f3f3; border-top: 2px solid #ffffff; border-radius: 50%; width: 12px; height: 12px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Footer */
         footer { text-align: center; padding: 15px; font-size: 12px; color: #7f8c8d; font-weight: bold; margin-top: 20px; border-top: 1px solid #e0e0e0; }
 
-        /* Print Style for PDF */
         @media print {
             body { background: white; padding: 0; }
-            .header, .nav-tabs, .btn, #alertMsg, .no-print, footer { display: none !important; }
+            .header, .nav-tabs, .btn, #alertMsg, .no-print, footer, #authOverlay { display: none !important; }
             .card { box-shadow: none; border: none; padding: 0; }
             #printableArea { display: block !important; }
             table { border: 1px solid #333; }
@@ -65,12 +80,24 @@
 </head>
 <body>
 
+<!-- PIN Overlay -->
+<div id="authOverlay">
+    <div class="auth-card">
+        <h2>🔒 MelaTrack Admin Access</h2>
+        <p style="font-size: 12px; color: #666;">እባክዎን የአስተዳዳሪ PIN ቁጥር ያስገቡ</p>
+        <input type="password" id="adminPinInput" placeholder="****" maxlength="8" onkeypress="handlePinKeyPress(event)">
+        <button class="btn btn-primary" style="width: 100%;" onclick="verifyPin()">ግባ</button>
+        <p id="pinError" style="color: red; font-size: 12px; margin-top: 10px; display: none;">❌ የተሳሳተ PIN ቁጥር!</p>
+    </div>
+</div>
+
 <div class="container">
     <div class="header">
         <h1>📊 MelaTrack - የአድሚን ዳሽቦርድ</h1>
         <div>
             <label style="font-size: 12px;">📅 ቀን፦ </label>
             <input type="date" id="reportDate" onchange="loadDashboardData()" style="padding: 5px; border-radius: 5px; border: none;">
+            <button class="btn btn-danger btn-sm" onclick="logout()" style="margin-left: 10px;">🔒 ውጣ</button>
         </div>
     </div>
 
@@ -89,7 +116,7 @@
         <div class="card">
             <div class="card-title">
                 <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ</span>
-                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
+                <button id="refreshBtn" class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
             </div>
             <div style="overflow-x: auto;">
                 <table>
@@ -106,7 +133,7 @@
         </div>
     </div>
 
-    <!-- TAB 2: ወርሃዊ ሪፖርት (ለሂሳብ ቤት PDF) -->
+    <!-- TAB 2: ወርሃዊ ሪፖርት -->
     <div id="tabMonthly" class="tab-content">
         <div class="card" id="printableArea">
             <div class="card-title">
@@ -131,7 +158,7 @@
         </div>
     </div>
 
-    <!-- TAB 3: የፈቃድ ጥያቄዎች ማስተናገጃ -->
+    <!-- TAB 3: የፈቃድ ጥያቄዎች -->
     <div id="tabLeaves" class="tab-content">
         <div class="card">
             <div class="card-title">
@@ -181,7 +208,7 @@
                             <input type="time" id="exitTime" value="17:00" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-success" style="width: 100%;">መዝግብ</button>
+                    <button type="submit" id="addEmpBtn" class="btn btn-success" style="width: 100%;">መዝግብ</button>
                 </form>
             </div>
 
@@ -200,7 +227,7 @@
                         <label>ራዲየስ (በሜትር)</label>
                         <input type="number" id="officeRadius" value="100" required>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">GPS ሴቭ አድርግ</button>
+                    <button type="submit" id="saveGpsBtn" class="btn btn-primary" style="width: 100%;">GPS ሴቭ አድርግ</button>
                 </form>
             </div>
         </div>
@@ -208,22 +235,53 @@
 
 </div>
 
-<!-- Footer -->
 <footer>
     Powered by Melak Advertising +251913064239
 </footer>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxWNmwUdEkv73R4xH_c4rJ76xCCRIWyy7LuQcuhqQiNpjJHlPdXeQ5_suOyxV66BerM/exec";
+    const ADMIN_PIN = "1234"; // የፈለጉትን የPIN ቁጥር እዚህ መቀየር ይችላሉ
     let alertTimer = null;
 
+    // PIN Authentication Functions
+    function verifyPin() {
+        const pin = document.getElementById('adminPinInput').value;
+        if (pin === ADMIN_PIN) {
+            document.getElementById('authOverlay').style.display = 'none';
+            sessionStorage.setItem('mela_admin_authed', 'true');
+            initDashboard();
+        } else {
+            document.getElementById('pinError').style.display = 'block';
+            document.getElementById('adminPinInput').value = '';
+        }
+    }
+
+    function handlePinKeyPress(e) {
+        if (e.key === 'Enter') verifyPin();
+    }
+
+    function logout() {
+        sessionStorage.removeItem('mela_admin_authed');
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('adminPinInput').value = '';
+        document.getElementById('pinError').style.display = 'none';
+    }
+
     window.onload = function() {
+        if (sessionStorage.getItem('mela_admin_authed') === 'true') {
+            document.getElementById('authOverlay').style.display = 'none';
+            initDashboard();
+        }
+    };
+
+    function initDashboard() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('reportDate').value = today;
         document.getElementById('monthlyFilter').value = today.substring(0, 7);
         loadDashboardData();
         loadMonthlyReport();
-    };
+    }
 
     function switchTab(tabId, evt) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -233,11 +291,26 @@
         if (evt) evt.currentTarget.classList.add('active');
     }
 
+    // Spinner Utility Functions
+    function setBtnLoading(btn, isLoading, text) {
+        if (!btn) return;
+        if (isLoading) {
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="spinner"></span> ${text}`;
+            btn.disabled = true;
+        } else {
+            btn.innerHTML = btn.dataset.originalText || text;
+            btn.disabled = false;
+        }
+    }
+
     async function loadDashboardData() {
         const dateVal = document.getElementById('reportDate').value;
         const dailyBody = document.getElementById('dailyReportBody');
         const leaveBody = document.getElementById('leaveRequestsBody');
-        
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        setBtnLoading(refreshBtn, true, 'እየጫነ...');
         dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
         leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
 
@@ -266,8 +339,8 @@
                         <td><span class="badge ${badgeClass}">${item.status}</span></td>
                         <td>${gpsCell}</td>
                         <td>
-                            <button class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')">🔓 Reset</button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}', '${item.full_name}')">🗑️ ሰርዝ</button>
+                            <button id="resetBtn_${item.id}" class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')">🔓 Reset</button>
+                            <button id="delBtn_${item.id}" class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}', '${item.full_name}')">🗑️ ሰርዝ</button>
                         </td>
                     </tr>`;
                 });
@@ -289,7 +362,7 @@
                             <td>${item.full_name}</td>
                             <td>${item.last_reason}</td>
                             <td>
-                                <button class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ</button>
+                                <button id="approveBtn_${item.id}" class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ</button>
                             </td>
                         </tr>`;
                     }
@@ -300,6 +373,9 @@
 
         } catch (err) {
             dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
+            showAlert('❌ የኔትወርክ ስህተት፡ የመረጃ ቋቱን ማግኘት አልተቻለም', 'danger');
+        } finally {
+            setBtnLoading(refreshBtn, false, '🔄 አድስ');
         }
     }
 
@@ -333,10 +409,42 @@
         }
     }
 
+    // Reset Device - Backend Integration
+    async function resetDevice(empId) {
+        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ (Device Bound) መፍታት ይፈልጋሉ?`)) return;
+
+        const btn = document.getElementById(`resetBtn_${empId}`);
+        setBtnLoading(btn, true, 'መፍታት ላይ...');
+        showAlert(`⏳ የሰራተኛ ID: ${empId} የስልክ ቁልፍ በመክፈት ላይ...`, 'info');
+
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'resetDevice', employee_id: empId })
+            });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                showAlert('✅ ' + (data.message || 'የሰራተኛው የስልክ ቁልፍ በስኬት ተፈትቷል!'), 'success');
+                loadDashboardData();
+            } else {
+                showAlert('❌ ' + (data.message || 'Reset ማድረግ አልተቻለም!'), 'danger');
+            }
+        } catch (err) {
+            showAlert('❌ ከሰርቨር ጋር መገናኘት አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '🔓 Reset');
+        }
+    }
+
     async function deleteEmployee(empId, empName) {
         if (!confirm(`እርግጠኛ ነዎት ሰራተኛ ${empName} (ID: ${empId}) ከሲስተሙ ላይ በቋሚነት እንዲሰረዝ ይፈልጋሉ?`)) return;
 
-        showAlert('⏳ ሰራተኛው በመሰረዝ ላይ...', '#e74c3c');
+        const btn = document.getElementById(`delBtn_${empId}`);
+        setBtnLoading(btn, true, 'መሰረዝ ላይ...');
+        showAlert(`⏳ ሰራተኛ ${empName} በመሰረዝ ላይ...`, 'info');
+
         try {
             const res = await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -344,18 +452,23 @@
                 body: JSON.stringify({ action: 'deleteEmployee', employee_id: empId })
             });
             const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
+            showAlert('✅ ' + data.message, 'success');
             loadDashboardData();
             loadMonthlyReport();
         } catch (err) {
-            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', '#e74c3c');
+            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '🗑️ ሰርዝ');
         }
     }
 
     async function approveLeave(empId, empName) {
         if (!confirm(`${empName} (ID: ${empId}) የጠየቁትን ፈቃድ ማጽደቅ ይፈልጋሉ?`)) return;
 
-        showAlert('⏳ ፈቃድ በመስጠት ላይ...', '#3498db');
+        const btn = document.getElementById(`approveBtn_${empId}`);
+        setBtnLoading(btn, true, 'ማጽደቅ ላይ...');
+        showAlert(`⏳ ለሰራተኛ ${empName} ፈቃድ በመስጠት ላይ...`, 'info');
+
         try {
             const res = await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -363,16 +476,20 @@
                 body: JSON.stringify({ action: 'approveLeave', employee_id: empId, employee_name: empName })
             });
             const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
+            showAlert('✅ ' + data.message, 'success');
             loadDashboardData();
         } catch (err) {
-            showAlert('❌ ፈቃድ መስጠት አልተቻለም!', '#e74c3c');
+            showAlert('❌ ፈቃድ መስጠት አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '✅ ፈቃድ ስጥ');
         }
     }
 
     async function handleAddEmployee(e) {
         e.preventDefault();
-        showAlert('⏳ ሰራተኛ በመመዝገብ ላይ...', '#3498db');
+        const btn = document.getElementById('addEmpBtn');
+        setBtnLoading(btn, true, 'መመዝገብ ላይ...');
+        showAlert('⏳ አዲስ ሰራተኛ በመመዝገብ ላይ...', 'info');
 
         const payload = {
             action: 'addEmployee',
@@ -390,18 +507,22 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
+            showAlert('✅ ' + data.message, 'success');
             document.getElementById('addEmpForm').reset();
             loadDashboardData();
             loadMonthlyReport();
         } catch (err) {
-            showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', '#e74c3c');
+            showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, 'መዝግብ');
         }
     }
 
     async function handleSaveGPS(e) {
         e.preventDefault();
-        showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', '#3498db');
+        const btn = document.getElementById('saveGpsBtn');
+        setBtnLoading(btn, true, 'ሴቭ በማድረግ ላይ...');
+        showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', 'info');
 
         const payload = {
             action: 'saveGPSConfig',
@@ -417,41 +538,26 @@
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
-            showAlert('✅ የ GPS መቼት በስኬት ተቀምጧል!', '#2ecc71');
+            showAlert('✅ የ GPS መቼት በስኬት ተቀምጧል!', 'success');
         } catch (err) {
-            showAlert('❌ GPS መቼት ሴቭ ማድረግ አልተቻለም!', '#e74c3c');
+            showAlert('❌ GPS መቼት ሴቭ ማድረግ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, 'GPS ሴቭ አድርግ');
         }
     }
 
-    async function resetDevice(empId) {
-        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ ማንሳት ይፈልጋሉ?`)) return;
-
-        showAlert('⏳ የስልክ ቁልፍ በመክፈት ላይ...', '#3498db');
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'resetDevice', employee_id: empId })
-            });
-            const data = await res.json();
-            showAlert('✅ ' + data.message, '#2ecc71');
-            loadDashboardData();
-        } catch (err) {
-            showAlert('❌ Reset ማድረግ አልተቻለም!', '#e74c3c');
-        }
-    }
-
-    function showAlert(text, color) {
+    // Dynamic Alert Notification Box
+    function showAlert(text, type = 'info') {
         const msg = document.getElementById('alertMsg');
         if (alertTimer) clearTimeout(alertTimer);
 
-        msg.innerText = text;
-        msg.style.backgroundColor = color;
-        msg.style.color = 'white';
+        msg.className = '';
+        msg.classList.add(`alert-${type}`);
+        msg.innerHTML = text;
         msg.style.display = 'block';
 
         alertTimer = setTimeout(() => {
-            msg.innerText = '';
+            msg.innerHTML = '';
             msg.style.display = 'none';
         }, 4000);
     }
