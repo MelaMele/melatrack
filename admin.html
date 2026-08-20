@@ -6,13 +6,12 @@
     <title>MelaTrack - የአድሚን ዳሽቦርድ</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 15px; color: #333; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        body { background-color: #f4f6f9; margin: 0; padding: 15px; color: #333; display: flex; flex-direction: column; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; flex: 1; width: 100%; }
         
         .header { background: #2c3e50; color: white; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
         .header h1 { margin: 0; font-size: 20px; }
         
-        /* Navigation Tabs */
         .nav-tabs { display: flex; gap: 8px; margin-bottom: 15px; border-bottom: 2px solid #bdc3c7; padding-bottom: 5px; flex-wrap: wrap; }
         .tab-btn { background: #e0e6ed; color: #34495e; border: none; padding: 10px 18px; border-radius: 6px 6px 0 0; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .tab-btn.active { background: #3498db; color: white; }
@@ -21,7 +20,7 @@
         .tab-content.active { display: block; }
 
         .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         
         .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
         
@@ -34,7 +33,7 @@
         .btn-success { background: #2ecc71; }
         .btn-danger { background: #e74c3c; }
         .btn-warning { background: #f39c12; }
-        .btn-sm { padding: 4px 8px; font-size: 11px; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; margin-right: 2px; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 12px; }
         th, td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; }
@@ -49,6 +48,19 @@
 
         .gps-link { color: #3498db; text-decoration: none; font-weight: bold; }
         #alertMsg { margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 13px; padding: 8px; border-radius: 6px; }
+        
+        /* Footer Styling */
+        footer { text-align: center; padding: 15px; font-size: 12px; color: #7f8c8d; font-weight: bold; margin-top: 20px; border-top: 1px solid #e0e0e0; }
+
+        /* Print Style for PDF */
+        @media print {
+            body { background: white; padding: 0; }
+            .header, .nav-tabs, .btn, #alertMsg, .no-print { display: none !important; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            #printableArea { display: block !important; }
+            table { border: 1px solid #333; }
+            th, td { border: 1px solid #333; }
+        }
     </style>
 </head>
 <body>
@@ -62,9 +74,10 @@
         </div>
     </div>
 
-    <!-- የገፆች የበተን ማውጫ (Tabs) -->
+    <!-- Navigation Tabs -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('tabDaily', event)">📋 የዕለቱ አቴንዳንስ</button>
+        <button class="tab-btn" onclick="switchTab('tabMonthly', event)">📅 ወርሃዊ ሪፖርት (ለሂሳብ ቤት)</button>
         <button class="tab-btn" onclick="switchTab('tabLeaves', event)">📝 የፈቃድ ጥያቄዎች</button>
         <button class="tab-btn" onclick="switchTab('tabSettings', event)">⚙️ መቼቶች እና አዲስ ሰራተኛ</button>
     </div>
@@ -75,7 +88,7 @@
     <div id="tabDaily" class="tab-content active">
         <div class="card">
             <div class="card-title">
-                <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ (Present / Absent / Permission)</span>
+                <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ</span>
                 <button class="btn btn-primary btn-sm" onclick="loadDashboardData()">🔄 አድስ</button>
             </div>
             <div style="overflow-x: auto;">
@@ -93,7 +106,32 @@
         </div>
     </div>
 
-    <!-- TAB 2: የፈቃድ ጥያቄዎች ማስተናገጃ -->
+    <!-- TAB 2: ወርሃዊ ሪፖርት (ለሂሳብ ቤት PDF) -->
+    <div id="tabMonthly" class="tab-content">
+        <div class="card" id="printableArea">
+            <div class="card-title">
+                <span>📅 የወርሃዊ ሰራተኞች አቴንዳንስ ማጠቃለያ ሪፖርት</span>
+                <div class="no-print" style="display: flex; gap: 10px; align-items: center;">
+                    <input type="month" id="monthlyFilter" onchange="loadMonthlyReport()" style="padding: 5px; border-radius: 5px; border: 1px solid #ccc;">
+                    <button class="btn btn-success btn-sm" onclick="window.print()">🖨️ PDF አውርድ / Print</button>
+                </div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ሰራተኛ ID</th><th>ሙሉ ስም</th><th>ዲፓርትመንት</th><th>የተሰራበት ቀን</th><th>ያረፈደበት ቀን</th><th>በፈቃድ የቀረበት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyReportBody">
+                        <tr><td colspan="6" style="text-align: center;">እባክዎን ወር ይምረጡ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: የፈቃድ ጥያቄዎች ማስተናገጃ -->
     <div id="tabLeaves" class="tab-content">
         <div class="card">
             <div class="card-title">
@@ -115,8 +153,31 @@
         </div>
     </div>
 
-    <!-- TAB 3: አዲስ ሰራተኛ መመዝገቢያ እና የ GPS መቼት -->
+    <!-- TAB 4: መቼቶች፣ የሰራተኛ ሊንክ እና አዲስ ሰራተኛ -->
     <div id="tabSettings" class="tab-content">
+        
+        <!-- 🔗 የሰራተኞች ሊንክ እና QR Code ካርድ -->
+        <div class="card" style="background: #ebf5fb; border: 1px solid #3498db;">
+            <div class="card-title" style="color: #2980b9;">🔗 የሰራተኞች ፖርታል ሊንክ (Employee Web App Link)</div>
+            <p style="font-size: 13px; color: #555;">ይህንን ሊንክ ኮፒ በማድረግ ለሰራተኞች በቴሌግራም/SMS ይላኩላቸው ወይም የ QR Code ምስሉን ፕሪንት አድርገው ይስቀሉት።</p>
+            
+            <div class="form-group">
+                <label>የሰራተኞች መግቢያ URL</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="employeePortalUrl" value="https://YOUR_EMPLOYEE_WEB_APP_URL.vercel.app" style="font-weight: bold; color: #2c3e50;">
+                    <button class="btn btn-primary" onclick="copyEmployeeLink()">📋 Copy Link</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; text-align: center;">
+                <button class="btn btn-warning" onclick="generateQRCode()">📱 የ QR Code ምስል አሳይ / Generate QR</button>
+                <div id="qrCodeContainer" style="margin-top: 15px; display: none;">
+                    <img id="qrCodeImg" src="" alt="Employee App QR Code" style="border: 2px solid #3498db; padding: 10px; background: white; border-radius: 8px;">
+                    <p style="font-size: 11px; color: #7f8c8d; margin-top: 5px;">ሰራተኞች ይህንን በስልካቸው ስካን በማድረግ በቀጥታ መግባት ይችላሉ።</p>
+                </div>
+            </div>
+        </div>
+
         <div class="grid-2">
             <div class="card">
                 <div class="card-title">➕ አዲስ ሰራተኛ መመዝገቢያ</div>
@@ -170,15 +231,23 @@
 
 </div>
 
+<!-- Footer -->
+<footer>
+    Powered by Melak Advertising +251913064239
+</footer>
+
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwv5EHw2DTswf89yjOg5pC3sRrr3Fkc6aUwmwMQ9Vonx0xwtlbkOQaKCjqGAB9nSubM/exec";
+    // ⚠️ የራስህን Google Apps Script Web App URL እዚህ ቦታ ተካ
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszMPrZV45SvcUv-nCt8v6oKhxJw6DbpD9CnhyhPHZNyT7l0EVks6DaCay53uTkQ8f/exec";
 
     window.onload = function() {
-        document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reportDate').value = today;
+        document.getElementById('monthlyFilter').value = today.substring(0, 7);
         loadDashboardData();
+        loadMonthlyReport();
     };
 
-    // ገፅ መቀየሪያ (Tab Switcher)
     function switchTab(tabId, evt) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -187,7 +256,6 @@
         if (evt) evt.currentTarget.classList.add('active');
     }
 
-    // መረጃዎችን ከ Google Sheet ማምጫ
     async function loadDashboardData() {
         const dateVal = document.getElementById('reportDate').value;
         const dailyBody = document.getElementById('dailyReportBody');
@@ -200,7 +268,6 @@
             const response = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${dateVal}`);
             const data = await response.json();
 
-            // 1. የዕለቱ አቴንዳንስ ሠንጠረዥ
             if (data.daily && data.daily.length > 0) {
                 let dailyHtml = '';
                 data.daily.forEach(item => {
@@ -223,6 +290,7 @@
                         <td>${gpsCell}</td>
                         <td>
                             <button class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')">🔓 Reset</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}', '${item.full_name}')">🗑️ ሰርዝ</button>
                         </td>
                     </tr>`;
                 });
@@ -231,7 +299,6 @@
                 dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ምንም የተመዘገበ ሰራተኛ አልተገኘም።</td></tr>';
             }
 
-            // 2. የፈቃድ ጥያቄዎች ሠንጠረዥ
             if (data.summary && data.summary.length > 0) {
                 let leaveHtml = '';
                 let hasLeaves = false;
@@ -245,7 +312,7 @@
                             <td>${item.full_name}</td>
                             <td>${item.last_reason}</td>
                             <td>
-                                <button class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ (Permission)</button>
+                                <button class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')">✅ ፈቃድ ስጥ</button>
                             </td>
                         </tr>`;
                     }
@@ -256,11 +323,60 @@
 
         } catch (err) {
             dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
-            leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
         }
     }
 
-    // የፈቃድ ጥያቄ ማጽደቂያ (Permission ማድረግ)
+    // ወርሃዊ ሪፖርት ማምጫ
+    async function loadMonthlyReport() {
+        const monthVal = document.getElementById('monthlyFilter').value;
+        const monthlyBody = document.getElementById('monthlyReportBody');
+        monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">⏳ ወርሃዊ ሪፖርት በመጫን ላይ...</td></tr>';
+
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=getMonthlyReport&month=${monthVal}`);
+            const data = await res.json();
+
+            if (data.report && data.report.length > 0) {
+                let html = '';
+                data.report.forEach(item => {
+                    html += `<tr>
+                        <td><b>${item.id}</b></td>
+                        <td>${item.full_name}</td>
+                        <td>${item.department}</td>
+                        <td><b>${item.days_worked} ቀን</b></td>
+                        <td style="color: #e67e22;"><b>${item.days_late} ቀን</b></td>
+                        <td style="color: #3498db;"><b>${item.days_permission} ቀን</b></td>
+                    </tr>`;
+                });
+                monthlyBody.innerHTML = html;
+            } else {
+                monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ለዚህ ወር ምንም አይነት መረጃ አልተገኘም።</td></tr>';
+            }
+        } catch (err) {
+            monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">❌ ወርሃዊ ሪፖርት ማምጣት አልተቻለም!</td></tr>';
+        }
+    }
+
+    // ሰራተኛ ከሲስተሙ ላይ መሰረዣ
+    async function deleteEmployee(empId, empName) {
+        if (!confirm(`እርግጠኛ ነዎት ሰራተኛ ${empName} (ID: ${empId}) ከሲስተሙ ላይ በቋሚነት እንዲሰረዝ ይፈልጋሉ?`)) return;
+
+        showAlert('⏳ ሰራተኛው በመሰረዝ ላይ...', '#e74c3c');
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'deleteEmployee', employee_id: empId })
+            });
+            const data = await res.json();
+            showAlert('✅ ' + data.message, '#2ecc71');
+            loadDashboardData();
+            loadMonthlyReport();
+        } catch (err) {
+            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', '#e74c3c');
+        }
+    }
+
     async function approveLeave(empId, empName) {
         if (!confirm(`${empName} (ID: ${empId}) የጠየቁትን ፈቃድ ማጽደቅ ይፈልጋሉ?`)) return;
 
@@ -279,7 +395,6 @@
         }
     }
 
-    // አዲስ ሰራተኛ መመዝገቢያ
     async function handleAddEmployee(e) {
         e.preventDefault();
         showAlert('⏳ ሰራተኛ በመመዝገብ ላይ...', '#3498db');
@@ -303,12 +418,12 @@
             showAlert('✅ ' + data.message, '#2ecc71');
             document.getElementById('addEmpForm').reset();
             loadDashboardData();
+            loadMonthlyReport();
         } catch (err) {
             showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', '#e74c3c');
         }
     }
 
-    // የ GPS መቼት ማስቀመጫ
     async function handleSaveGPS(e) {
         e.preventDefault();
         showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', '#3498db');
@@ -333,7 +448,6 @@
         }
     }
 
-    // የስልክ መቆለፊያ ማንሻ (Reset Device)
     async function resetDevice(empId) {
         if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ ማንሳት ይፈልጋሉ?`)) return;
 
@@ -350,6 +464,37 @@
         } catch (err) {
             showAlert('❌ Reset ማድረግ አልተቻለም!', '#e74c3c');
         }
+    }
+
+    // የሰራተኛውን ሊንክ ኮፒ ማድረጊያ
+    function copyEmployeeLink() {
+        const urlInput = document.getElementById('employeePortalUrl');
+        urlInput.select();
+        urlInput.setSelectionRange(0, 99999);
+
+        navigator.clipboard.writeText(urlInput.value).then(() => {
+            showAlert('✅ የሰራተኞች መግቢያ ሊንክ በስኬት ኮፒ ሆኗል!', '#2ecc71');
+        }).catch(() => {
+            showAlert('❌ ኮፒ ማድረግ አልተቻለም!', '#e74c3c');
+        });
+    }
+
+    // የ QR Code ምስል ማመንጫ
+    function generateQRCode() {
+        const portalUrl = document.getElementById('employeePortalUrl').value;
+        const qrContainer = document.getElementById('qrCodeContainer');
+        const qrImg = document.getElementById('qrCodeImg');
+
+        if (!portalUrl || portalUrl.includes("YOUR_EMPLOYEE_WEB_APP_URL")) {
+            showAlert('⚠️ እባክዎን አስቀድመው ትክክለኛውን የሰራተኛ Web App URL ያስገቡ!', '#f39c12');
+            return;
+        }
+
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(portalUrl)}`;
+        qrImg.src = qrApiUrl;
+        qrContainer.style.display = 'block';
+        
+        showAlert('✅ QR Code በስኬት ተዘጋጅቷል!', '#2ecc71');
     }
 
     function showAlert(text, color) {
