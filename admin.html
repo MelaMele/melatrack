@@ -619,47 +619,48 @@
       }
     }
 
-    // 📡 Global Fetch Helper (POST Request)
+    // 📤 Generic Helper for Sending POST Requests
     async function sendPostRequest(payload, successMsg) {
       try {
-        const res = await fetch(SCRIPT_URL, {
+        const response = await fetch(SCRIPT_URL, {
           method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-        const result = await res.json();
+        const result = await response.json();
         if (result.status === "success") {
           showToast(successMsg, "success");
         } else {
-          showToast("ስህተት፦ " + result.message, "danger");
+          showToast("ስህተት፦ " + (result.message || "ክወናው አልተሳካም"), "danger");
         }
       } catch (err) {
-        showToast("ከሲስተሙ ጋር መገናኘት አልተቻለም፦ " + err.message, "danger");
+        showToast("የአውታረ መረብ ስህተት አጋጥሟል!", "danger");
       }
     }
 
-    // 🔔 Toast Notification Handler
-    function showToast(msg, type = "success") {
+    // 🔔 Toast Notification Helper
+    function showToast(message, type = "success") {
       const toast = document.getElementById("toastAlert");
       const content = document.getElementById("toastContent");
       const icon = document.getElementById("toastIcon");
-      const message = document.getElementById("toastMessage");
+      const msg = document.getElementById("toastMessage");
 
-      message.innerText = msg;
-
+      msg.innerText = message;
+      
       if (type === "success") {
-        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-emerald-50 text-emerald-800 border-emerald-200";
+        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-emerald-50 border-emerald-200 text-emerald-800";
         icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
       } else {
-        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-rose-50 text-rose-800 border-rose-200";
-        icon.className = "fa-solid fa-triangle-exclamation text-rose-600 text-lg";
+        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-rose-50 border-rose-200 text-rose-800";
+        icon.className = "fa-solid fa-circle-exclamation text-rose-600 text-lg";
       }
 
       toast.classList.remove("hidden");
-      setTimeout(() => toast.classList.remove("translate-y-[-10px]"), 10);
-
+      toast.classList.remove("translate-y-[-10px]");
+      
       setTimeout(() => {
         toast.classList.add("translate-y-[-10px]");
-        setTimeout(() => toast.classList.add("hidden"), 300);
+        toast.classList.add("hidden");
       }, 4000);
     }
   </script>
