@@ -619,8 +619,8 @@
       }
     }
 
-    // 📤 Generic Helper for Sending POST Requests
-    async function sendPostRequest(payload, successMsg) {
+    // 📤 Helper: Send POST Request to Google Apps Script
+    async function sendPostRequest(payload, successMessage) {
       try {
         const response = await fetch(SCRIPT_URL, {
           method: "POST",
@@ -628,17 +628,18 @@
           body: JSON.stringify(payload)
         });
         const result = await response.json();
-        if (result.status === "success") {
-          showToast(successMsg, "success");
+
+        if (result.status === "success" || result.success) {
+          showToast(successMessage, "success");
         } else {
-          showToast("ስህተት፦ " + (result.message || "ክወናው አልተሳካም"), "danger");
+          showToast(result.message || "ስህተት ተከሰቷል!", "danger");
         }
       } catch (err) {
-        showToast("የአውታረ መረብ ስህተት አጋጥሟል!", "danger");
+        showToast("ከሰርቨር ጋር ማገናኘት አልተቻለም፦ " + err.message, "danger");
       }
     }
 
-    // 🔔 Toast Notification Helper
+    // 🔔 Helper: Toast Notification Handler
     function showToast(message, type = "success") {
       const toast = document.getElementById("toastAlert");
       const content = document.getElementById("toastContent");
@@ -646,7 +647,7 @@
       const msg = document.getElementById("toastMessage");
 
       msg.innerText = message;
-      
+
       if (type === "success") {
         content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-emerald-50 border-emerald-200 text-emerald-800";
         icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
@@ -657,10 +658,10 @@
 
       toast.classList.remove("hidden");
       toast.classList.remove("translate-y-[-10px]");
-      
+
       setTimeout(() => {
-        toast.classList.add("translate-y-[-10px]");
         toast.classList.add("hidden");
+        toast.classList.add("translate-y-[-10px]");
       }, 4000);
     }
   </script>
