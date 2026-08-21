@@ -1,220 +1,251 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaTrack - ሰራተኛ መግቢያና መውጫ</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #f4f6f9; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
-        .card h2 { margin-top: 0; color: #2c3e50; font-size: 22px; margin-bottom: 5px; }
-        .sub-title { color: #7f8c8d; font-size: 13px; margin-bottom: 20px; }
-        
-        .form-group { text-align: left; margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; color: #333; }
-        .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; transition: 0.3s; }
-        .form-group input:focus, .form-group textarea:focus { border-color: #3498db; outline: none; }
-        
-        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-        .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-in { background-color: #2ecc71; }
-        .btn-out { background-color: #e74c3c; }
-        .btn-leave { background-color: #f39c12; width: 100%; margin-top: 10px; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MelaTrack - የሰራተኞች መግቢያ</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Telegram Web App SDK (ለ Telegram Mini App ዝግጁ እንዲሆን) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-        /* Spinner Animations */
-        .spinner { border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #ffffff; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Status Box System */
-        #statusMsg { margin-top: 15px; font-size: 13px; font-weight: bold; padding: 12px; border-radius: 8px; display: none; line-height: 1.4; }
-        .msg-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .msg-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .msg-info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
-
-        .gps-status { font-size: 11px; color: #7f8c8d; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; padding: 6px; border-radius: 6px; background: #f8f9fa; border: 1px dashed #ccc; }
-        
-        .leave-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 15px; text-align: left; }
-        footer { margin-top: 25px; font-size: 11px; color: #bdc3c7; font-weight: bold; }
-    </style>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Noto Sans Ethiopic', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-<div class="card">
-    <h2>🏢 MelaTrack</h2>
-    <div class="sub-title">የሰራተኛ መግቢያና መውጫ ፖርታል</div>
-
-    <div id="statusMsg"></div>
-
-    <div class="form-group">
-        <label for="employeeId">የሰራተኛ ID ቁጥር</label>
-        <input type="text" id="employeeId" placeholder="ምሳሌ፦ EMP-101" required>
+  <!-- Header Section -->
+  <header class="bg-indigo-600 text-white p-5 rounded-b-3xl shadow-lg text-center">
+    <div class="flex justify-center items-center gap-2 mb-1">
+      <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
+      <h1 class="text-xl font-bold">MelaTrack</h1>
     </div>
-
-    <!-- GPS status -->
-    <div class="gps-status" id="gpsStatus" onclick="getGPSLocation()">
-        📍 GPS አድራሻ በመፈለግ ላይ... (እንደገና ለመፈለግ እዚህ ይጫኑ)
-    </div>
-
-    <div class="btn-group">
-        <button id="btnIn" class="btn btn-in" onclick="handleAttendance('CheckIn')">📥 Check In</button>
-        <button id="btnOut" class="btn btn-out" onclick="handleAttendance('CheckOut')">📤 Check Out</button>
-    </div>
-
-    <!-- የፈቃድ ጥያቄ ማቅረቢያ -->
-    <div class="leave-section">
-        <div class="form-group">
-            <label for="leaveReason">የቀሪ / የፈቃድ ምክንያት (ካለዎት)</label>
-            <textarea id="leaveReason" rows="2" placeholder="ዛሬ ስራ የማልመጣበት ምክንያት..."></textarea>
-        </div>
-        <button id="btnLeave" class="btn btn-leave" onclick="handleAttendance('Permission')">📝 የፈቃድ ጥያቄ ላክ</button>
-    </div>
-
-    <footer>Powered by Melak Advertising +251913064239</footer>
-</div>
-
-<script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0apKxFhJEDKZPxs5iovCaZxmDMYdp67Le2wtXegfsNGBsAU5V2Q38HJZ9k3IFuy5p/exec";
+    <p class="text-indigo-100 text-xs">የሰራተኞች የሰዓት እና ቦታ መቆጣጠሪያ</p>
     
-    let currentLat = null;
-    let currentLng = null;
-    let msgTimer = null;
+    <!-- Live Time Display -->
+    <div class="mt-4 bg-indigo-700/60 inline-block px-4 py-2 rounded-2xl border border-indigo-400/30">
+      <p id="liveDate" class="text-xs text-indigo-200">----, -- -- ----</p>
+      <p id="liveClock" class="text-2xl font-black tracking-wider text-white">00:00:00</p>
+    </div>
+  </header>
 
-    window.onload = function() {
-        getGPSLocation();
-        
-        const savedId = localStorage.getItem('melatrack_emp_id');
-        if (savedId) {
-            document.getElementById('employeeId').value = savedId;
-        }
+  <!-- Main Content Area -->
+  <main class="px-4 py-6 max-w-md mx-auto w-full space-y-5 flex-1">
+
+    <!-- Employee ID Input Card -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+      <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+        <i class="fa-solid fa-id-card text-indigo-500 mr-1"></i> የሰራተኛ ID ያስገቡ
+      </label>
+      <input type="text" id="empIdInput" placeholder="ምሳሌ፦ EMP-101" 
+             class="w-full px-4 py-3 border border-slate-300 rounded-xl font-mono text-center text-lg uppercase font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+    </div>
+
+    <!-- GPS Status Card -->
+    <div id="gpsStatusCard" class="bg-blue-50 border border-blue-200 p-3.5 rounded-xl flex items-center justify-between text-xs text-blue-700">
+      <div class="flex items-center space-x-2 space-x-reverse">
+        <i class="fa-solid fa-location-dot text-blue-600 text-base animate-bounce"></i>
+        <span id="gpsStatusText">የ GPS ቦታ በመፈለግ ላይ...</span>
+      </div>
+      <button onclick="getGPSLocation()" class="text-indigo-600 font-semibold underline text-[11px]">አድስ</button>
+    </div>
+
+    <!-- Attendance Actions (Check In / Check Out Buttons) -->
+    <div class="grid grid-cols-2 gap-4 pt-2">
+      <!-- Check In Button -->
+      <button id="btnCheckIn" onclick="submitAttendance('CheckIn')" 
+              class="bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white py-4 px-3 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 shadow-md transition-all">
+        <i class="fa-solid fa-right-to-bracket text-2xl"></i>
+        <span>Check In</span>
+        <span class="text-[10px] font-normal text-emerald-100">ስራ መግቢያ</span>
+      </button>
+
+      <!-- Check Out Button -->
+      <button id="btnCheckOut" onclick="submitAttendance('CheckOut')" 
+              class="bg-rose-600 hover:bg-rose-700 active:scale-95 text-white py-4 px-3 rounded-2xl font-bold flex flex-col items-center justify-center gap-1 shadow-md transition-all">
+        <i class="fa-solid fa-right-from-bracket text-2xl"></i>
+        <span>Check Out</span>
+        <span class="text-[10px] font-normal text-rose-100">ስራ መውጫ</span>
+      </button>
+    </div>
+
+    <!-- Leave Request Action Link -->
+    <div class="text-center pt-2">
+      <button onclick="toggleLeaveModal(true)" class="text-xs text-slate-500 hover:text-indigo-600 underline font-medium">
+        <i class="fa-solid fa-envelope-open-text mr-1"></i> የልዩ ፈቃድ ጥያቄ ለማቅረብ እዚህ ይጫኑ
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Leave Request Modal -->
+  <div id="leaveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl p-5 w-full max-w-sm space-y-4 shadow-xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-paper-plane text-indigo-600 mr-1"></i> የፈቃድ ጥያቄ ማቅረቢያ</h3>
+        <button onclick="toggleLeaveModal(false)" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">የፈቃድ ምክንያት</label>
+        <textarea id="leaveReason" rows="3" placeholder="ምሳሌ፦ ህመም ምክንያት/ሜዳ ስራ..." class="w-full border rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      </div>
+      <button onclick="submitAttendance('Permission')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl text-xs font-bold transition">
+        ጥያቄውን ላክ
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="py-4 text-center text-xs text-slate-400">
+    <p>MelaTrack System &copy; 2026 | All Rights Reserved</p>
+  </footer>
+
+  <!-- JavaScript Code -->
+  <script>
+    // ⚠️ የራስዎን Google Apps Script Web App URL እዚህ ይተኩ!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjz6Xfrzm9TFbxQ2DN2YEETsopTw1DNtm83q5Xt4ci-55z0DQivgbC1GjYnOoZ9hnP/exec";
+
+    let userLat = null;
+    let userLng = null;
+    let deviceId = "";
+
+    // 1. ገጹ ሲከፈት የሚሰሩ ነገሮች
+    window.onload = () => {
+      startClock();
+      getGPSLocation();
+      initDeviceId();
+
+      // Telegram Mini App ከተከፈተ የቴሌግራም ገጽን ሙሉ ማድረግ
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
     };
 
+    // 2. ሰዓት እና ቀን በሴከንድ የሚያድስ (Live Clock)
+    function startClock() {
+      const update = () => {
+        const now = new Date();
+        document.getElementById("liveClock").innerText = now.toLocaleTimeString('en-US', { hour12: false });
+        document.getElementById("liveDate").innerText = now.toLocaleDateString('am-ET', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      };
+      update();
+      setInterval(update, 1000);
+    }
+
+    // 3. የስልክ መለያ ID ማዘጋጀት (Unique Device Fingerprint)
+    function initDeviceId() {
+      let id = localStorage.getItem("melatrack_device_id");
+      if (!id) {
+        id = "DEV-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        localStorage.setItem("melatrack_device_id", id);
+      }
+      deviceId = id;
+    }
+
+    // 4. የ GPS መረጃ መውሰጃ
     function getGPSLocation() {
-        const gpsLabel = document.getElementById('gpsStatus');
-        gpsLabel.innerHTML = '🔄 GPS አድራሻ በመፈለግ ላይ...';
-        gpsLabel.style.color = '#7f8c8d';
+      const statusText = document.getElementById("gpsStatusText");
+      const statusCard = document.getElementById("gpsStatusCard");
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    currentLat = pos.coords.latitude;
-                    currentLng = pos.coords.longitude;
-                    gpsLabel.innerHTML = '✅ GPS አድራሻ ተገኝቷል (ለማደስ ይጫኑ)';
-                    gpsLabel.style.color = '#2ecc71';
-                },
-                (err) => {
-                    gpsLabel.innerHTML = '❌ GPS መክፈት አልተቻለም! Location ያብሩና እዚህ ይጫኑ';
-                    gpsLabel.style.color = '#e74c3c';
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
+      statusText.innerText = "የ GPS ቦታ በመፈለግ ላይ...";
+      statusCard.className = "bg-amber-50 border border-amber-200 p-3.5 rounded-xl flex items-center justify-between text-xs text-amber-700";
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+            statusText.innerText = `ቦታዎት ተረጋግጧል (Lat: ${userLat.toFixed(3)}, Lng: ${userLng.toFixed(3)})`;
+            statusCard.className = "bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl flex items-center justify-between text-xs text-emerald-700";
+          },
+          (err) => {
+            statusText.innerText = "GPS ማግኘት አልተቻለም! እባክዎ Location ያብሩ።";
+            statusCard.className = "bg-rose-50 border border-rose-200 p-3.5 rounded-xl flex items-center justify-between text-xs text-rose-700";
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        statusText.innerText = "ስልክዎ Geolocation አያግዝም።";
+      }
+    }
+
+    // 5. Check In / Check Out / Permission የመላኪያ ተግባር
+    async function submitAttendance(type) {
+      const empId = document.getElementById("empIdInput").value.trim();
+
+      if (!empId) {
+        alert("እባክዎን የሰራተኛ ID ያግኙ/ያስገቡ!");
+        return;
+      }
+
+      if (type !== 'Permission' && (!userLat || !userLng)) {
+        alert("የ GPS ቦታዎ አልተገኘም! እባክዎ የስልክዎን Location ያብሩና እንደገና ይሞክሩ።");
+        getGPSLocation();
+        return;
+      }
+
+      const reason = type === 'Permission' ? document.getElementById("leaveReason").value : "";
+
+      if (type === 'Permission' && !reason) {
+        alert("እባክዎን የፈቃድ ጥያቄዎን ምክንያት ይጻፉ!");
+        return;
+      }
+
+      const payload = {
+        action: "logAttendance",
+        employee_id: empId,
+        type: type,
+        latitude: userLat,
+        longitude: userLng,
+        device_id: deviceId,
+        reason: reason
+      };
+
+      // Button Disable ማድረግ እንዳይደጋገም
+      toggleButtons(false);
+
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.status === "success") {
+          alert(result.message);
+          if (type === 'Permission') toggleLeaveModal(false);
         } else {
-            gpsLabel.innerHTML = '❌ የስልክዎ ብራውዘር GPS አያግዝም';
+          alert("ስህተት፦ " + result.message);
         }
+      } catch (err) {
+        alert("ከሲስተሙ ጋር መገናኘት አልተቻለም፦ " + err.message);
+      } finally {
+        toggleButtons(true);
+      }
     }
 
-    function getDeviceId() {
-        let devId = localStorage.getItem('melatrack_device_id');
-        if (!devId) {
-            devId = 'DEV-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now();
-            localStorage.setItem('melatrack_device_id', devId);
-        }
-        return devId;
+    // Modal ለመክፈት/ለመዝጋት
+    function toggleLeaveModal(show) {
+      document.getElementById("leaveModal").classList.toggle("hidden", !show);
     }
 
-    function toggleButtons(disabled, activeType = '') {
-        const btnIn = document.getElementById('btnIn');
-        const btnOut = document.getElementById('btnOut');
-        const btnLeave = document.getElementById('btnLeave');
-
-        btnIn.disabled = disabled;
-        btnOut.disabled = disabled;
-        btnLeave.disabled = disabled;
-
-        if (disabled) {
-            if (activeType === 'CheckIn') btnIn.innerHTML = '<span class="spinner"></span> በመላክ ላይ...';
-            if (activeType === 'CheckOut') btnOut.innerHTML = '<span class="spinner"></span> በመላክ ላይ...';
-            if (activeType === 'Permission') btnLeave.innerHTML = '<span class="spinner"></span> በመላክ ላይ...';
-        } else {
-            btnIn.innerHTML = '📥 Check In';
-            btnOut.innerHTML = '📤 Check Out';
-            btnLeave.innerHTML = '📝 የፈቃድ ጥያቄ ላክ';
-        }
+    // Button Enable/Disable
+    function toggleButtons(enable) {
+      document.getElementById("btnCheckIn").disabled = !enable;
+      document.getElementById("btnCheckOut").disabled = !enable;
+      document.getElementById("btnCheckIn").style.opacity = enable ? "1" : "0.5";
+      document.getElementById("btnCheckOut").style.opacity = enable ? "1" : "0.5";
     }
-
-    async function handleAttendance(type) {
-        const empId = document.getElementById('employeeId').value.trim();
-        const reason = document.getElementById('leaveReason').value.trim();
-
-        if (!empId) {
-            showMsg('❌ እባክዎን የሰራተኛ ID ቁጥርዎን ያስገቡ!', 'danger');
-            return;
-        }
-
-        if (type === 'Permission' && !reason) {
-            showMsg('❌ እባክዎን የፈቃድ/የቀሪ ምክንያትዎን ይፃፉ!', 'danger');
-            return;
-        }
-
-        if (!currentLat || !currentLng) {
-            getGPSLocation();
-            showMsg('⏳ GPS አድራሻዎን በመፈለግ ላይ ነው... እባክዎን ጥቂት ሰከንድ ቆይተው ድጋሚ ይሞክሩ', 'info');
-            return;
-        }
-
-        localStorage.setItem('melatrack_emp_id', empId);
-        toggleButtons(true, type);
-        showMsg('⏳ ጥያቄዎ ወደ ሰርቨር በመላክ ላይ ነው...', 'info');
-
-        const payload = {
-            action: 'logAttendance',
-            employee_id: empId,
-            type: type,
-            latitude: currentLat,
-            longitude: currentLng,
-            device_id: getDeviceId(),
-            reason: reason
-        };
-
-        try {
-            const res = await fetch(SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (data.status === 'success') {
-                showMsg('✅ ' + data.message, 'success');
-                document.getElementById('leaveReason').value = ''; // መስኩን ማፅዳት
-            } else {
-                showMsg('⚠️ ' + data.message, 'danger');
-            }
-
-        } catch (err) {
-            showMsg('❌ መረጃውን መላክ አልተቻለም! ኢንተርኔትዎን ያረጋግጡ።', 'danger');
-        } finally {
-            toggleButtons(false);
-        }
-    }
-
-    function showMsg(text, type = 'info') {
-        const msg = document.getElementById('statusMsg');
-        if (msgTimer) clearTimeout(msgTimer);
-
-        msg.className = '';
-        msg.classList.add(`msg-${type}`);
-        msg.innerText = text;
-        msg.style.display = 'block';
-
-        msgTimer = setTimeout(() => {
-            msg.innerText = '';
-            msg.style.display = 'none';
-        }, 5000);
-    }
-</script>
-
+  </script>
 </body>
 </html>
