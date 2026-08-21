@@ -1,334 +1,617 @@
 <!DOCTYPE html>
 <html lang="am">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MelaTrack - የአስተዳዳሪ ዳሽቦርድ</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
-    body {
-      font-family: 'Noto Sans Ethiopic', sans-serif;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MelaTrack - የአድሚን ዳሽቦርድ</title>
+    <!-- Google Fonts & FontAwesome Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-main: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --radius: 12px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+        }
+
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; transition: all 0.2s ease-in-out; }
+        body { background-color: var(--bg-main); margin: 0; padding: 20px; color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1280px; margin: 0 auto; flex: 1; width: 100%; }
+
+        /* Header UI */
+        .header { 
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
+            color: white; 
+            padding: 20px 28px; 
+            border-radius: var(--radius); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 24px; 
+            box-shadow: var(--shadow);
+            flex-wrap: wrap; 
+            gap: 15px; 
+        }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .date-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; outline: none; }
+        .date-picker::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+        /* Navigation Tabs */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 2px; flex-wrap: wrap; }
+        .tab-btn { background: transparent; color: var(--text-muted); border: none; padding: 12px 20px; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; position: relative; }
+        .tab-btn:hover { color: var(--primary); background: rgba(79, 70, 229, 0.05); }
+        .tab-btn.active { color: var(--primary); background: white; border-bottom: 3px solid var(--primary); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards & Forms */
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; border: 1px solid var(--border-color); }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+        .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; background: #f8fafc; }
+        .form-group input:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        /* Buttons */
+        .btn { padding: 9px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: white; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); } .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+        .btn-success { background: var(--success); } .btn-success:hover:not(:disabled) { opacity: 0.9; }
+        .btn-danger { background: var(--danger); } .btn-danger:hover:not(:disabled) { opacity: 0.9; }
+        .btn-warning { background: var(--warning); color: #fff; } .btn-warning:hover:not(:disabled) { opacity: 0.9; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
+        th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background: #f1f5f9; color: var(--text-muted); font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+        tr:hover { background: #f8fafc; }
+
+        /* Badges & Links */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; color: white; display: inline-block; text-transform: uppercase; }
+        .bg-present { background: var(--success); }
+        .bg-late { background: var(--warning); }
+        .bg-absent { background: var(--danger); }
+        .bg-permission { background: var(--info); }
+
+        .gps-link { color: var(--primary); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .gps-link:hover { text-decoration: underline; }
+
+        /* Alerts */
+        #alertMsg { margin-bottom: 20px; font-weight: 600; text-align: center; font-size: 14px; padding: 12px 20px; border-radius: var(--radius); display: none; }
+        .alert-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-danger { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-info { background-color: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+
+        /* Auth Overlay / Lock Screen */
+        #authOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .auth-card { background: white; padding: 40px; border-radius: 16px; text-align: center; max-width: 380px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+        .auth-card h2 { margin-top: 0; color: var(--text-main); font-size: 20px; font-weight: 700; }
+        .auth-card input { width: 100%; padding: 12px; margin: 20px 0; border: 1px solid var(--border-color); border-radius: 8px; font-size: 18px; text-align: center; letter-spacing: 6px; outline: none; }
+        .auth-card input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
+
+        /* Spinner Animations */
+        .spinner { border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid #ffffff; border-radius: 50%; width: 14px; height: 14px; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Footer */
+        footer { text-align: center; padding: 20px; font-size: 13px; color: var(--text-muted); font-weight: 600; margin-top: auto; }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .header, .nav-tabs, .btn, #alertMsg, .no-print, footer, #authOverlay { display: none !important; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            #printableArea { display: block !important; }
+            table { border: 1px solid #333; }
+            th, td { border: 1px solid #333; }
+        }
+    </style>
 </head>
-<body class="bg-slate-100 text-slate-800 antialiased min-h-screen">
+<body>
 
-  <!-- Header -->
-  <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-      <div class="flex items-center space-x-3 space-x-reverse">
-        <i class="fa-solid fa-user-shield text-2xl"></i>
-        <h1 class="text-xl font-bold tracking-wide">MelaTrack Admin Dashboard</h1>
-      </div>
-      <div id="connection-status" class="text-xs bg-indigo-800 px-3 py-1 rounded-full text-indigo-200">
-        <i class="fa-solid fa-circle text-green-400 text-[10px] mr-1"></i> ዝግጁ ነው
-      </div>
+<!-- PIN Lock Screen Overlay -->
+<div id="authOverlay">
+    <div class="auth-card">
+        <div style="font-size: 40px; color: var(--primary); margin-bottom: 10px;"><i class="fa-solid => fa-shield-halved"></i></div>
+        <h2>MelaTrack Admin Access</h2>
+        <p style="font-size: 13px; color: var(--text-muted);">እባክዎን የአስተዳዳሪ PIN ቁጥር ያስገቡ</p>
+        <input type="password" id="adminPinInput" placeholder="****" maxlength="8" onkeypress="handlePinKeyPress(event)">
+        <button class="btn btn-primary" style="width: 100%; padding: 12px;" onclick="verifyPin()">
+            <i class="fa-solid fa-right-to-bracket"></i> ግባ
+        </button>
+        <p id="pinError" style="color: var(--danger); font-size: 13px; margin-top: 15px; display: none;">❌ የተሳሳተ PIN ቁጥር!</p>
     </div>
-  </header>
+</div>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <h1><i class="fa-solid fa-chart-line"></i> MelaTrack - የአድሚን ዳሽቦርድ</h1>
+        <div class="header-actions">
+            <label style="font-size: 13px;"><i class="fa-solid fa-calendar-day"></i> ቀን፦ </label>
+            <input type="date" id="reportDate" class="date-picker" onchange="loadDashboardData()">
+            <button class="btn btn-danger btn-sm" onclick="logout()"><i class="fa-solid fa-lock"></i> ውጣ</button>
+        </div>
+    </div>
 
-    <!-- Left Column: Controls & Forms -->
-    <section class="space-y-6">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('tabDaily', event)"><i class="fa-solid fa-clipboard-user"></i> የዕለቱ አቴንዳንስ</button>
+        <button class="tab-btn" onclick="switchTab('tabMonthly', event)"><i class="fa-solid fa-calendar-check"></i> ወርሃዊ ሪፖርት (ለሂሳብ ቤት)</button>
+        <button class="tab-btn" onclick="switchTab('tabLeaves', event)"><i class="fa-solid fa-envelope-open-text"></i> የፈቃድ ጥያቄዎች</button>
+        <button class="tab-btn" onclick="switchTab('tabSettings', event)"><i class="fa-solid fa-sliders"></i> መቼቶች እና አዲስ ሰራተኛ</button>
+    </div>
 
-      <!-- 1. Add Employee Card -->
-      <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2 flex items-center gap-2">
-          <i class="fa-solid fa-user-plus text-indigo-600"></i> አዲስ ሰራተኛ መመዝገብ
-        </h2>
-        <form id="addEmployeeForm" onsubmit="handleAddEmployee(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ሙሉ ስም</label>
-            <input type="text" id="empName" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">የስራ ክፍል (Department)</label>
-            <input type="text" id="empDept" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">ስልክ ቁጥር</label>
-            <input type="tel" id="empPhone" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">መግቢያ ሰዓት</label>
-              <input type="time" id="empEntry" value="08:00" class="w-full px-2 py-2 border rounded-lg text-sm outline-none">
+    <div id="alertMsg"></div>
+
+    <!-- TAB 1: የዕለቱ የአቴንዳንስ ሪፖርት -->
+    <div id="tabDaily" class="tab-content active">
+        <div class="card">
+            <div class="card-title">
+                <span>📋 የዕለቱ የሰራተኞች መግቢያና መውጫ</span>
+                <button id="refreshBtn" class="btn btn-primary btn-sm" onclick="loadDashboardData()"><i class="fa-solid fa-rotate"></i> አድስ</button>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">መውጫ ሰዓት</label>
-              <input type="time" id="empExit" value="17:00" class="w-full px-2 py-2 border rounded-lg text-sm outline-none">
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th><th>ስም</th><th>ዲፓርትመንት</th><th>Check In</th><th>Check Out</th><th>የተሰራበት</th><th>Status</th><th>GPS</th><th>ተግባራት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dailyReportBody">
+                        <tr><td colspan="9" style="text-align: center;">መረጃ በመጫን ላይ...</td></tr>
+                    </tbody>
+                </table>
             </div>
-          </div>
-          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-sm font-medium transition shadow">
-            መዝግብ
-          </button>
-        </form>
-      </div>
+        </div>
+    </div>
 
-      <!-- 2. GPS Geofence Settings -->
-      <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2 flex items-center gap-2">
-          <i class="fa-solid fa-location-dot text-indigo-600"></i> የ GPS ክልል (Geofence)
-        </h2>
-        <form id="gpsForm" onsubmit="handleSaveGPS(event)" class="space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Latitude</label>
-              <input type="number" step="any" id="gpsLat" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
+    <!-- TAB 2: ወርሃዊ ሪፖርት -->
+    <div id="tabMonthly" class="tab-content">
+        <div class="card" id="printableArea">
+            <div class="card-title">
+                <span>📅 የወርሃዊ ሰራተኞች አቴንዳንስ ማጠቃለያ ሪፖርት</span>
+                <div class="no-print" style="display: flex; gap: 10px; align-items: center;">
+                    <input type="month" id="monthlyFilter" onchange="loadMonthlyReport()" style="padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <button class="btn btn-success btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> PDF አውርድ / Print</button>
+                </div>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-slate-600 mb-1">Longitude</label>
-              <input type="number" step="any" id="gpsLng" required class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ሰራተኛ ID</th><th>ሙሉ ስም</th><th>ዲፓርትመንት</th><th>የተሰራበት ቀን</th><th>ያረፈደበት ቀን</th><th>በፈቃድ የቀረበት</th>
+                        </tr>
+                    </thead>
+                    <tbody id="monthlyReportBody">
+                        <tr><td colspan="6" style="text-align: center;">እባክዎን ወር ይምረጡ...</td></tr>
+                    </tbody>
+                </table>
             </div>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-slate-600 mb-1">የተፈቀደ ርቀት (በሜትር/Radius)</label>
-            <input type="number" id="gpsRadius" value="100" class="w-full px-3 py-2 border rounded-lg text-sm outline-none">
-          </div>
-          <div class="flex gap-2">
-            <button type="button" onclick="getCurrentLocation()" class="w-1/2 bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded-lg text-xs font-medium">
-              የአሁኑን ቦታ ያግኙ
-            </button>
-            <button type="submit" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-xs font-medium">
-              መቼት አስቀምጥ
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <!-- 3. Device Reset -->
-      <div class="bg-white rounded-xl shadow-sm p-5 border border-slate-200">
-        <h2 class="text-lg font-semibold text-slate-700 mb-4 border-b pb-2 flex items-center gap-2">
-          <i class="fa-solid fa-mobile-screen-button text-indigo-600"></i> የስልክ ቁልፍ መፍቻ (Reset Lock)
-        </h2>
-        <div class="flex gap-2">
-          <input type="text" id="resetEmpId" placeholder="ሰራተኛ ID (ምሳሌ: EMP-101)" class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none">
-          <button onclick="handleResetDevice()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-            ፍታ
-          </button>
         </div>
-      </div>
+    </div>
 
-    </section>
-
-    <!-- Right Column: Live Attendance Reports -->
-    <section class="lg:col-span-2 space-y-6">
-
-      <!-- Summary Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-          <p class="text-xs text-slate-500">ጠቅላላ የተገኙ</p>
-          <p id="statPresent" class="text-2xl font-bold text-green-600">0</p>
+    <!-- TAB 3: የፈቃድ ጥያቄዎች -->
+    <div id="tabLeaves" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>📝 ከሰራተኞች የቀረቡ የፈቃድ / የቀሪ መልእክቶች</span>
+                <button class="btn btn-primary btn-sm" onclick="loadDashboardData()"><i class="fa-solid fa-rotate"></i> አድስ</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ቀን</th><th>ID</th><th>ስም</th><th>ምክንያት</th><th>ውሳኔ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaveRequestsBody">
+                        <tr><td colspan="5" style="text-align: center;">ምንም የፈቃድ ጥያቄ አልተገኘም</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-          <p class="text-xs text-slate-500">የዘገዩ</p>
-          <p id="statLate" class="text-2xl font-bold text-amber-500">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-          <p class="text-xs text-slate-500">የቀረቡ የፈቃድ ጥያቄዎች</p>
-          <p id="statPermission" class="text-2xl font-bold text-blue-500">0</p>
-        </div>
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
-          <p class="text-xs text-slate-500">ያልመጡ (Absent)</p>
-          <p id="statAbsent" class="text-2xl font-bold text-red-500">0</p>
-        </div>
-      </div>
+    </div>
 
-      <!-- Live Attendance Table -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-          <h2 class="font-bold text-slate-700 flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-indigo-600"></i> የእለቱ የሰራተኞች መዝገብ
-          </h2>
-          <div class="flex items-center gap-2">
-            <input type="date" id="reportDate" onchange="loadAdminReport()" class="px-2 py-1 border rounded-lg text-xs outline-none">
-            <button onclick="loadAdminReport()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 p-2 rounded-lg text-xs">
-              <i class="fa-solid fa-rotate"></i>
-            </button>
-          </div>
+    <!-- TAB 4: መቼቶች እና አዲስ ሰራተኛ -->
+    <div id="tabSettings" class="tab-content">
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-user-plus"></i> አዲስ ሰራተኛ መመዝገቢያ</div>
+                <form id="addEmpForm" onsubmit="handleAddEmployee(event)">
+                    <div class="form-group">
+                        <label>ሙሉ ስም</label>
+                        <input type="text" id="empName" placeholder="አለሙ ተስፋዬ" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ዲፓርትመንት</label>
+                        <input type="text" id="empDept" placeholder="IT / Library" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ስልክ ቁጥር</label>
+                        <input type="tel" id="empPhone" placeholder="0911000000" required>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>መግቢያ ሰዓት</label>
+                            <input type="time" id="entryTime" value="08:00" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>መውጫ ሰዓት</label>
+                            <input type="time" id="exitTime" value="17:00" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="addEmpBtn" class="btn btn-success" style="width: 100%;"><i class="fa-solid fa-floppy-disk"></i> መዝግብ</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-location-dot"></i> የድርጅቱ GPS አድራሻ (Geofence)</div>
+                <form onsubmit="handleSaveGPS(event)">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="text" id="officeLat" placeholder="9.010793" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="text" id="officeLng" placeholder="38.761252" required>
+                    </div>
+                    <div class="form-group">
+                        <label>ራዲየስ (በሜትር)</label>
+                        <input type="number" id="officeRadius" value="100" required>
+                    </div>
+                    <button type="submit" id="saveGpsBtn" class="btn btn-primary" style="width: 100%;"><i class="fa-solid fa-map-pin"></i> GPS ሴቭ አድርግ</button>
+                </form>
+            </div>
         </div>
+    </div>
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-600">
-            <thead class="bg-slate-100 text-xs uppercase font-semibold text-slate-500">
-              <tr>
-                <th class="p-3">ሰራተኛ</th>
-                <th class="p-3">ክፍል</th>
-                <th class="p-3">Check In</th>
-                <th class="p-3">Check Out</th>
-                <th class="p-3">ሁኔታ (Status)</th>
-                <th class="p-3 text-center">ተግባር</th>
-              </tr>
-            </thead>
-            <tbody id="attendanceTableBody" class="divide-y divide-slate-100">
-              <tr>
-                <td colspan="6" class="p-4 text-center text-slate-400">መረጃዎችን በመጫን ላይ...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+</div>
 
-    </section>
+<footer>
+    Powered by Melak Advertising +251913064239
+</footer>
 
-  </main>
-
-  <!-- JavaScript Logic -->
-  <script>
-    // ⚠️ የራስዎን Google Apps Script Web App URL እዚህ ይተኩ!
+<script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjz6Xfrzm9TFbxQ2DN2YEETsopTw1DNtm83q5Xt4ci-55z0DQivgbC1GjYnOoZ9hnP/exec";
+    const ADMIN_PIN = "1234"; 
+    let alertTimer = null;
 
-    // ገጹ ሲከፈት የእለቱን ቀን ማዘጋጀት እና ሪፖርቱን መጫን
-    window.onload = () => {
-      document.getElementById("reportDate").value = new Date().toISOString().split('T')[0];
-      loadAdminReport();
+    // PIN Authentication Functions
+    function verifyPin() {
+        const pin = document.getElementById('adminPinInput').value;
+        if (pin === ADMIN_PIN) {
+            document.getElementById('authOverlay').style.display = 'none';
+            sessionStorage.setItem('mela_admin_authed', 'true');
+            initDashboard();
+        } else {
+            document.getElementById('pinError').style.display = 'block';
+            document.getElementById('adminPinInput').value = '';
+        }
+    }
+
+    function handlePinKeyPress(e) {
+        if (e.key === 'Enter') verifyPin();
+    }
+
+    function logout() {
+        sessionStorage.removeItem('mela_admin_authed');
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('adminPinInput').value = '';
+        document.getElementById('pinError').style.display = 'none';
+    }
+
+    window.onload = function() {
+        if (sessionStorage.getItem('mela_admin_authed') === 'true') {
+            document.getElementById('authOverlay').style.display = 'none';
+            initDashboard();
+        }
     };
 
-    // 1. የእለቱን ሪፖርት መጫኛ (Get Live Attendance)
-    async function loadAdminReport() {
-      const selectedDate = document.getElementById("reportDate").value;
-      const tbody = document.getElementById("attendanceTableBody");
-      tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>በመጫን ላይ...</td></tr>`;
+    function initDashboard() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reportDate').value = today;
+        document.getElementById('monthlyFilter').value = today.substring(0, 7);
+        loadDashboardData();
+        loadMonthlyReport();
+    }
 
-      try {
-        const response = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${selectedDate}`);
-        const data = await response.json();
+    function switchTab(tabId, evt) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        if (evt) evt.currentTarget.classList.add('active');
+    }
 
-        if (data.daily && data.daily.length > 0) {
-          tbody.innerHTML = "";
-          let pCount = 0, lCount = 0, permCount = 0, aCount = 0;
+    // Spinner Utility Functions
+    function setBtnLoading(btn, isLoading, text) {
+        if (!btn) return;
+        if (isLoading) {
+            btn.dataset.originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="spinner"></span> ${text}`;
+            btn.disabled = true;
+        } else {
+            btn.innerHTML = btn.dataset.originalText || text;
+            btn.disabled = false;
+        }
+    }
 
-          data.daily.forEach(emp => {
-            // Status counts
-            if (emp.status === "Present") pCount++;
-            else if (emp.status === "Late") lCount++;
-            else if (emp.status === "Permission Pending") permCount++;
-            else if (emp.status === "Absent") aCount++;
+    async function loadDashboardData() {
+        const dateVal = document.getElementById('reportDate').value;
+        const dailyBody = document.getElementById('dailyReportBody');
+        const leaveBody = document.getElementById('leaveRequestsBody');
+        const refreshBtn = document.getElementById('refreshBtn');
 
-            // Status Badge Formatting
-            let badgeClass = "bg-slate-100 text-slate-600";
-            if (emp.status === "Present") badgeClass = "bg-green-100 text-green-700";
-            else if (emp.status === "Late") badgeClass = "bg-amber-100 text-amber-700";
-            else if (emp.status === "Permission Pending") badgeClass = "bg-blue-100 text-blue-700";
-            else if (emp.status === "Absent") badgeClass = "bg-red-100 text-red-700";
+        setBtnLoading(refreshBtn, true, 'እየጫነ...');
+        dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
+        leaveBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">⏳ መረጃ በመጫን ላይ...</td></tr>';
 
-            let actionBtn = "";
-            if (emp.status === "Permission Pending") {
-              actionBtn = `<button onclick="approveLeave('${emp.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs">ፈቃድ አፅድቅ</button>`;
+        try {
+            const response = await fetch(`${SCRIPT_URL}?action=getAdminReport&date=${dateVal}`);
+            const data = await response.json();
+
+            if (data.daily && data.daily.length > 0) {
+                let dailyHtml = '';
+                data.daily.forEach(item => {
+                    let badgeClass = 'bg-absent';
+                    if (item.status === 'Present') badgeClass = 'bg-present';
+                    if (item.status === 'Late') badgeClass = 'bg-late';
+                    if (item.status === 'Permission') badgeClass = 'bg-permission';
+
+                    let gpsCell = item.latitude && item.longitude ? 
+                        `<a href="https://maps.google.com/?q=${item.latitude},${item.longitude}" target="_blank" class="gps-link"><i class="fa-solid fa-location-arrow"></i> ካርታ</a>` : '-';
+
+                    dailyHtml += `<tr>
+                        <td><b>${item.id}</b></td>
+                        <td>${item.full_name}</td>
+                        <td>${item.department}</td>
+                        <td>${item.check_in || '-'}</td>
+                        <td>${item.check_out || '-'}</td>
+                        <td><b>${item.total_hours || '-'}</b></td>
+                        <td><span class="badge ${badgeClass}">${item.status}</span></td>
+                        <td>${gpsCell}</td>
+                        <td>
+                            <button id="resetBtn_${item.id}" class="btn btn-warning btn-sm" onclick="resetDevice('${item.id}')"><i class="fa-solid fa-key"></i> Reset</button>
+                            <button id="delBtn_${item.id}" class="btn btn-danger btn-sm" onclick="deleteEmployee('${item.id}', '${item.full_name}')"><i class="fa-solid fa-trash"></i> ሰርዝ</button>
+                        </td>
+                    </tr>`;
+                });
+                dailyBody.innerHTML = dailyHtml;
+            } else {
+                dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center;">ምንም የተመዘገበ ሰራተኛ አልተገኘም።</td></tr>';
             }
 
-            tbody.innerHTML += `
-              <tr class="hover:bg-slate-50 transition">
-                <td class="p-3 font-medium text-slate-800">${emp.full_name} <br><span class="text-xs text-slate-400">${emp.id}</span></td>
-                <td class="p-3">${emp.department}</td>
-                <td class="p-3 font-mono text-xs">${emp.check_in || "-"}</td>
-                <td class="p-3 font-mono text-xs">${emp.check_out || "-"}</td>
-                <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeClass}">${emp.status}</span></td>
-                <td class="p-3 text-center">${actionBtn}</td>
-              </tr>
-            `;
-          });
+            if (data.summary && data.summary.length > 0) {
+                let leaveHtml = '';
+                let hasLeaves = false;
 
-          // Update Stats
-          document.getElementById("statPresent").innerText = pCount;
-          document.getElementById("statLate").innerText = lCount;
-          document.getElementById("statPermission").innerText = permCount;
-          document.getElementById("statAbsent").innerText = aCount;
+                data.summary.forEach(item => {
+                    if (item.last_reason && item.last_reason !== '-') {
+                        hasLeaves = true;
+                        leaveHtml += `<tr>
+                            <td>${dateVal}</td>
+                            <td><b>${item.id}</b></td>
+                            <td>${item.full_name}</td>
+                            <td>${item.last_reason}</td>
+                            <td>
+                                <button id="approveBtn_${item.id}" class="btn btn-success btn-sm" onclick="approveLeave('${item.id}', '${item.full_name}')"><i class="fa-solid fa-check"></i> ፈቃድ ስጥ</button>
+                            </td>
+                        </tr>`;
+                    }
+                });
 
-        } else {
-          tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">ምንም አይነት መዝገብ አልተገኘም።</td></tr>`;
+                leaveBody.innerHTML = hasLeaves ? leaveHtml : '<tr><td colspan="5" style="text-align: center;">ምንም የቀረበ የፈቃድ ጥያቄ የለም።</td></tr>';
+            }
+
+        } catch (err) {
+            dailyBody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: var(--danger);">❌ መረጃ ማምጣት አልተቻለም!</td></tr>';
+            showAlert('❌ የኔትወርክ ስህተት፡ የመረጃ ቋቱን ማግኘት አልተቻለም', 'danger');
+        } finally {
+            setBtnLoading(refreshBtn, false, '<i class="fa-solid fa-rotate"></i> አድስ');
         }
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">መረጃዎችን መጫን አልተቻለም። እባክዎ Script URLን ያረጋግጡ።</td></tr>`;
-      }
     }
 
-    // 2. አዲስ ሰራተኛ መመዝገብ (Add Employee)
+    async function loadMonthlyReport() {
+        const monthVal = document.getElementById('monthlyFilter').value;
+        const monthlyBody = document.getElementById('monthlyReportBody');
+        monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">⏳ ወርሃዊ ሪፖርት በመጫን ላይ...</td></tr>';
+
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=getMonthlyReport&month=${monthVal}`);
+            const data = await res.json();
+
+            if (data.report && data.report.length > 0) {
+                let html = '';
+                data.report.forEach(item => {
+                    html += `<tr>
+                        <td><b>${item.id}</b></td>
+                        <td>${item.full_name}</td>
+                        <td>${item.department}</td>
+                        <td><b>${item.days_worked} ቀን</b></td>
+                        <td style="color: var(--warning);"><b>${item.days_late} ቀን</b></td>
+                        <td style="color: var(--info);"><b>${item.days_permission} ቀን</b></td>
+                    </tr>`;
+                });
+                monthlyBody.innerHTML = html;
+            } else {
+                monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">ለዚህ ወር ምንም አይነት መረጃ አልተገኘም።</td></tr>';
+            }
+        } catch (err) {
+            monthlyBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger);">❌ ወርሃዊ ሪፖርት ማምጣት አልተቻለም!</td></tr>';
+        }
+    }
+
+    // Reset Device - Backend Integration
+    async function resetDevice(empId) {
+        if (!confirm(`የሰራተኛ ID: ${empId} የስልክ ቁልፍ (Device Bound) መፍታት ይፈልጋሉ?`)) return;
+
+        const btn = document.getElementById(`resetBtn_${empId}`);
+        setBtnLoading(btn, true, 'መፍታት ላይ...');
+        showAlert(`⏳ የሰራተኛ ID: ${empId} የስልክ ቁልፍ በመክፈት ላይ...`, 'info');
+
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'resetDevice', employee_id: empId })
+            });
+            const data = await res.json();
+
+            if (data.status === 'success') {
+                showAlert('✅ ' + (data.message || 'የሰራተኛው የስልክ ቁልፍ በስኬት ተፈትቷል!'), 'success');
+                loadDashboardData();
+            } else {
+                showAlert('❌ ' + (data.message || 'Reset ማድረግ አልተቻለም!'), 'danger');
+            }
+        } catch (err) {
+            showAlert('❌ ከሰርቨር ጋር መገናኘት አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '<i class="fa-solid fa-key"></i> Reset');
+        }
+    }
+
+    async function deleteEmployee(empId, empName) {
+        if (!confirm(`እርግጠኛ ነዎት ሰራተኛ ${empName} (ID: ${empId}) ከሲስተሙ ላይ በቋሚነት እንዲሰረዝ ይፈልጋሉ?`)) return;
+
+        const btn = document.getElementById(`delBtn_${empId}`);
+        setBtnLoading(btn, true, 'መሰረዝ ላይ...');
+        showAlert(`⏳ ሰራተኛ ${empName} በመሰረዝ ላይ...`, 'info');
+
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'deleteEmployee', employee_id: empId })
+            });
+            const data = await res.json();
+            showAlert('✅ ' + data.message, 'success');
+            loadDashboardData();
+            loadMonthlyReport();
+        } catch (err) {
+            showAlert('❌ ሰራተኛውን መሰረዝ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '<i class="fa-solid fa-trash"></i> ሰርዝ');
+        }
+    }
+
+    async function approveLeave(empId, empName) {
+        if (!confirm(`${empName} (ID: ${empId}) የጠየቁትን ፈቃድ ማጽደቅ ይፈልጋሉ?`)) return;
+
+        const btn = document.getElementById(`approveBtn_${empId}`);
+        setBtnLoading(btn, true, 'ማጽደቅ ላይ...');
+        showAlert(`⏳ ለሰራተኛ ${empName} ፈቃድ በመስጠት ላይ...`, 'info');
+
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'approveLeave', employee_id: empId, employee_name: empName })
+            });
+            const data = await res.json();
+            showAlert('✅ ' + data.message, 'success');
+            loadDashboardData();
+        } catch (err) {
+            showAlert('❌ ፈቃድ መስጠት አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '<i class="fa-solid fa-check"></i> ፈቃድ ስጥ');
+        }
+    }
+
     async function handleAddEmployee(e) {
-      e.preventDefault();
-      const payload = {
-        action: "addEmployee",
-        full_name: document.getElementById("empName").value,
-        department: document.getElementById("empDept").value,
-        phone: document.getElementById("empPhone").value,
-        entry_time: document.getElementById("empEntry").value,
-        exit_time: document.getElementById("empExit").value
-      };
+        e.preventDefault();
+        const btn = document.getElementById('addEmpBtn');
+        setBtnLoading(btn, true, 'መመዝገብ ላይ...');
+        showAlert('⏳ አዲስ ሰራተኛ በመመዝገብ ላይ...', 'info');
 
-      await sendPostRequest(payload, "አዲስ ሰራተኛ በስኬት ተመዝግቧል!");
-      document.getElementById("addEmployeeForm").reset();
-      loadAdminReport();
-    }
+        const payload = {
+            action: 'addEmployee',
+            full_name: document.getElementById('empName').value,
+            department: document.getElementById('empDept').value,
+            phone: document.getElementById('empPhone').value,
+            entry_time: document.getElementById('entryTime').value,
+            exit_time: document.getElementById('exitTime').value
+        };
 
-    // 3. የ GPS Geofence መቼት ማስቀመጥ
-    async function handleSaveGPS(e) {
-      e.preventDefault();
-      const payload = {
-        action: "saveGPSConfig",
-        latitude: document.getElementById("gpsLat").value,
-        longitude: document.getElementById("gpsLng").value,
-        radius: document.getElementById("gpsRadius").value
-      };
-
-      await sendPostRequest(payload, "የ GPS መቼት በስኬት ተቀምጧል!");
-    }
-
-    // Current Location Selector
-    function getCurrentLocation() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            document.getElementById("gpsLat").value = pos.coords.latitude;
-            document.getElementById("gpsLng").value = pos.coords.longitude;
-          },
-          err => alert("GPS መረጃ ማግኘት አልተቻለም፦ " + err.message)
-        );
-      } else {
-        alert("ስልክዎ/ብራውዘርዎ GPS አያግዝም።");
-      }
-    }
-
-    // 4. የስልክ ቁልፍ መፍታት (Reset Device)
-    async function handleResetDevice() {
-      const empId = document.getElementById("resetEmpId").value;
-      if (!empId) return alert("እባክዎን የሰራተኛ ID ያስገቡ!");
-
-      const payload = { action: "resetDevice", employee_id: empId };
-      await sendPostRequest(payload, "የሰራተኛው የስልክ ቁልፍ ተፈትቷል!");
-      document.getElementById("resetEmpId").value = "";
-    }
-
-    // 5. የፈቃድ ጥያቄ ማፅደቅ
-    async function approveLeave(empId) {
-      if (confirm("የዚህን ሰራተኛ ፈቃድ ማፅደቅ ይፈልጋሉ?")) {
-        const payload = { action: "approveLeave", employee_id: empId };
-        await sendPostRequest(payload, "ፈቃዱ ተጸድቋል!");
-        loadAdminReport();
-      }
-    }
-
-    // Helper POST fetch function
-    async function sendPostRequest(payload, successMsg) {
-      try {
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
-        const result = await res.json();
-        if (result.status === "success") {
-          alert(successMsg);
-        } else {
-          alert("ስህተት፦ " + result.message);
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            showAlert('✅ ' + data.message, 'success');
+            document.getElementById('addEmpForm').reset();
+            loadDashboardData();
+            loadMonthlyReport();
+        } catch (err) {
+            showAlert('❌ ሰራተኛ መመዝገብ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '<i class="fa-solid fa-floppy-disk"></i> መዝግብ');
         }
-      } catch (err) {
-        alert("ከሲስተሙ ጋር መገናኘት አልተቻለም፦ " + err.message);
-      }
     }
-  </script>
+
+    async function handleSaveGPS(e) {
+        e.preventDefault();
+        const btn = document.getElementById('saveGpsBtn');
+        setBtnLoading(btn, true, 'ሴቭ በማድረግ ላይ...');
+        showAlert('⏳ GPS መቼት በመጠበቅ ላይ...', 'info');
+
+        const payload = {
+            action: 'saveGPSConfig',
+            latitude: document.getElementById('officeLat').value,
+            longitude: document.getElementById('officeLng').value,
+            radius: document.getElementById('officeRadius').value
+        };
+
+        try {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            showAlert('✅ የ GPS መቼት በስኬት ተቀምጧል!', 'success');
+        } catch (err) {
+            showAlert('❌ GPS መቼት ሴቭ ማድረግ አልተቻለም!', 'danger');
+        } finally {
+            setBtnLoading(btn, false, '<i class="fa-solid fa-map-pin"></i> GPS ሴቭ አድርግ');
+        }
+    }
+
+    // Dynamic Alert Notification Box
+    function showAlert(text, type = 'info') {
+        const msg = document.getElementById('alertMsg');
+        if (alertTimer) clearTimeout(alertTimer);
+
+        msg.className = '';
+        msg.classList.add(`alert-${type}`);
+        msg.innerHTML = text;
+        msg.style.display = 'block';
+
+        alertTimer = setTimeout(() => {
+            msg.innerHTML = '';
+            msg.style.display = 'none';
+        }, 4000);
+    }
+</script>
+
 </body>
 </html>
