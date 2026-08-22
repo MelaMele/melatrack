@@ -376,7 +376,8 @@
 
   <!-- JavaScript Script Logic -->
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwjKiCxkEp7OZaJR7XOk2hXOk5-efxz4aw_hPcshD55FGHUi9wA2f9vVYRSfKzkC7lT/exec";
+    // ⚠️ የ Google Apps Script Web App URLዎን እዚህ ጋር ይተኩ!
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwBVMMieykZPyfE8KOi20JuQETCG9uQ5kdqHl-V0GlBJnMuq9D1zQZsyYb8z22Jzpav/exec";
     const ADMIN_PIN = "1234"; 
 
     // ገጹ ሲከፈት የ-PIN ደህንነት ማረጋገጫ
@@ -455,7 +456,7 @@
           data.daily.forEach(emp => {
             if (emp.status === "Present") pCount++;
             else if (emp.status === "Late") lCount++;
-            else if (emp.status.includes("Permission")) permCount++;
+            else if (emp.status === "Permission Pending" || emp.status === "Permission Approved") permCount++;
             else if (emp.status === "Absent") aCount++;
 
             let badgeClass = "bg-slate-100 text-slate-600";
@@ -464,13 +465,13 @@
             else if (emp.status.includes("Permission")) badgeClass = "bg-sky-100 text-sky-700";
             else if (emp.status === "Absent") badgeClass = "bg-rose-100 text-rose-700";
 
-            let gpsLink = (emp.lat && emp.lng) 
+            let gpsLink = emp.lat && emp.lng 
               ? `<a href="https://maps.google.com/?q=${emp.lat},${emp.lng}" target="_blank" class="text-indigo-600 hover:underline font-semibold text-xs inline-flex items-center gap-1"><i class="fa-solid fa-location-arrow"></i> ካርታ</a>` 
               : `<span class="text-slate-300">-</span>`;
 
             let actionBtn = "";
             if (emp.status === "Permission Pending") {
-              actionBtn = `<button onclick="approveLeave('${emp.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition">ፈቃድ አፅድቅ</button>`;
+              actionBtn = `<button onclick="approveLeave('${emp.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium">ፈቃድ አፅድቅ</button>`;
             }
 
             dailyTbody.innerHTML += `
@@ -506,7 +507,7 @@
                 <td class="p-4 text-slate-600">${req.reason}</td>
                 <td class="p-4 text-center">
                   ${req.status === 'Pending' 
-                    ? `<button onclick="approveLeave('${req.employee_id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition">አፅድቅ</button>`
+                    ? `<button onclick="approveLeave('${req.employee_id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg text-xs font-medium">አፅድቅ</button>`
                     : `<span class="text-xs text-emerald-600 font-semibold">ጸድቋል</span>`}
                 </td>
               </tr>
@@ -613,34 +614,31 @@
     async function approveLeave(empId) {
       if (confirm("የዚህን ሰራተኛ ፈቃድ ማፅደቅ ይፈልጋሉ?")) {
         const payload = { action: "approveLeave", employee_id: empId };
-        await sendPostRequest(payload, "የሰራተኛው ፈቃድ ጸድቋል!");
+        await sendPostRequest(payload, "ፈቃዱ በስኬት ተጸድቋል!");
         loadDashboardData();
       }
     }
 
-    // 📤 Helper function for sending POST requests safely to Apps Script
+    // 📤 Generic Helper for Sending POST Requests
     async function sendPostRequest(payload, successMsg) {
       try {
-        // Apps Script CORS Preflight መከላከልያ (text/plain ቀጥታ POST)
         const response = await fetch(SCRIPT_URL, {
           method: "POST",
-          mode: "cors",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
-
-        const resData = await response.json();
-        if (resData.status === "success" || resData.success) {
-          showToast(successMsg || "ተግባሩ ተከናውኗል!", "success");
+        const result = await response.json();
+        if (result.status === "success") {
+          showToast(successMsg, "success");
         } else {
-          showToast(resData.message || "ስህተት አጋጥሟል!", "danger");
+          showToast("ስህተት፦ " + (result.message || "ክወናው አልተሳካም"), "danger");
         }
       } catch (err) {
-        showToast("ከሰርቨር ጋር መገናኘት አልተቻለም፦ " + err.message, "danger");
+        showToast("የአውታረ መረብ ስህተት አጋጥሟል!", "danger");
       }
     }
 
-    // 🔔 Toast Alert Display Helper
+    // 🔔 Toast Notification Helper
     function showToast(message, type = "success") {
       const toast = document.getElementById("toastAlert");
       const content = document.getElementById("toastContent");
@@ -648,17 +646,20 @@
       const msg = document.getElementById("toastMessage");
 
       msg.innerText = message;
-      toast.classList.remove("hidden");
-
+      
       if (type === "success") {
-        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200";
+        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-emerald-50 border-emerald-200 text-emerald-800";
         icon.className = "fa-solid fa-circle-check text-emerald-600 text-lg";
       } else {
-        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium bg-rose-50 text-rose-800 border border-rose-200";
+        content.className = "p-4 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium border bg-rose-50 border-rose-200 text-rose-800";
         icon.className = "fa-solid fa-circle-exclamation text-rose-600 text-lg";
       }
 
+      toast.classList.remove("hidden");
+      toast.classList.remove("translate-y-[-10px]");
+      
       setTimeout(() => {
+        toast.classList.add("translate-y-[-10px]");
         toast.classList.add("hidden");
       }, 4000);
     }
